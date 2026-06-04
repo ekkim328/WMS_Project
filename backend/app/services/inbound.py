@@ -1,11 +1,11 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from fastapi import HTTPException
 from app.db.models import Inbound
 from app.db.models import Inventory
-from app.db.scheme.inbounds import InboundCreate, InboundRead, InboundUpdate
-from app.db.scheme.inventorys import InventoryUpdate, InventoryCreate
+from app.db.scheme.inbounds import InboundCreate
+from app.db.scheme.inventorys import InventoryCreate
 from app.db.crud import InboundCrud, InventoryCrud
+from app.services.history import HistoryService
 
 
 class InboundService:
@@ -41,6 +41,20 @@ class InboundService:
             db_inventory=await InventoryCrud.create(db,new_inventory)
                 
         db_inbound = await InboundCrud.create(db, inbound)
+
+        await HistoryService.record(
+            db=db,
+        event_type="inbound",
+        target_table="inbounds",
+        target_id=db_inbound.inbound_id,
+        product_id=inbound.product_id,
+        location_id=inbound.location_id,
+        qty=inbound.inbound_qty,
+        before_qty=before_qty,
+        after_qty=after_qty,
+        status="success",
+        reason="입고 처리"
+        )
     
         await db.commit()
         await db.refresh(db_inbound)

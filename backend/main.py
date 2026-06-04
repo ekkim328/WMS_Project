@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.db.database import Base, async_engine
 from fastapi.concurrency import asynccontextmanager
 from dotenv import load_dotenv
-from app.routers import user, inbound, outbound, inventory, product, location
+from app.routers import user, inbound, outbound, inventory, product, location, history
 load_dotenv(dotenv_path=".env")
 
 # 애플리케이션의 시작과 종료 시 실행될 작업을 정의함
@@ -32,3 +32,4 @@ app.include_router(outbound.router)
 app.include_router(inventory.router)
 app.include_router(product.router)
 app.include_router(location.router)
+app.include_router(history.router)
