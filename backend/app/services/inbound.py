@@ -50,8 +50,6 @@ class InboundService:
         product_id=inbound.product_id,
         location_id=inbound.location_id,
         qty=inbound.inbound_qty,
-        before_qty=before_qty,
-        after_qty=after_qty,
         status="success",
         reason="입고 처리"
         )
