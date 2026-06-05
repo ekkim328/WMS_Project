@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getOutbounds, createOutbound } from "../api/outbound";
+import { createOutbound, getOutbounds } from "../api/outbound";
 
 function OutboundPage() {
   const [outbounds, setOutbounds] = useState([]);
@@ -43,10 +43,25 @@ function OutboundPage() {
       <h2>출고 관리</h2>
 
       <form onSubmit={handleSubmit}>
-        <input name="product_id" placeholder="상품 ID" value={form.product_id} onChange={handleChange} />
-        <input name="location_id" placeholder="로케이션 ID" value={form.location_id} onChange={handleChange} />
-        <input name="outbound_qty" placeholder="출고 수량" value={form.outbound_qty} onChange={handleChange} />
-        <button type="submit">입고 등록</button>
+        <input
+          name="product_id"
+          placeholder="상품 ID"
+          value={form.product_id}
+          onChange={handleChange}
+        />
+        <input
+          name="location_id"
+          placeholder="로케이션 ID"
+          value={form.location_id}
+          onChange={handleChange}
+        />
+        <input
+          name="outbound_qty"
+          placeholder="출고 수량"
+          value={form.outbound_qty}
+          onChange={handleChange}
+        />
+        <button type="submit">출고 등록</button>
       </form>
 
       <table>
