@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.db.models import Inventory
-from app.db.scheme.inventorys import InventoryUpdate, InventoryCreate
+from app.db.scheme.inventories import InventoryUpdate, InventoryCreate
 
 
 class InventoryCrud:

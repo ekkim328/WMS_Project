@@ -2,25 +2,28 @@ from pydantic import BaseModel, Field
 
 
 class ProductBase(BaseModel):
-    product_name:str
-    category:str
-    price:int
+    barcode: str
+    product_name: str
+    category: str
+    price: int
 
-class ProductCreate(BaseModel):
-    product_name:str=Field(max_length=50)
-    category:str=Field(max_length=40)
-    price:int=Field(ge=0)
+
+class ProductCreate(ProductBase):
+    barcode: str = Field(max_length=30)
+    product_name: str = Field(max_length=50)
+    category: str = Field(max_length=40)
+    price: int = Field(ge=0)
+
 
 class ProductUpdate(BaseModel):
-    product_name:str | None=None
-    category:str | None=None
-    price:int | None=None
+    barcode: str | None = Field(default=None, max_length=30)
+    product_name: str | None = Field(default=None, max_length=50)
+    category: str | None = Field(default=None, max_length=40)
+    price: int | None = Field(default=None, ge=0)
 
-class ProductInDB(ProductBase):
+
+class ProductRead(ProductBase):
     product_id: int
 
     class Config:
         from_attributes = True
-
-class ProductRead(ProductInDB):
-    pass

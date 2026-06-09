@@ -10,8 +10,9 @@ class User(Base):
     __tablename__="users"
 
     user_id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    username: Mapped[str] =mapped_column(String(40), nullable=False)
+    username: Mapped[str] =mapped_column(String(40), unique=True, nullable=False)
     email: Mapped[str] =mapped_column(String(100), unique=True, nullable=False)
     password: Mapped[str] =mapped_column(String(300), nullable=False)
+    is_admin: Mapped[bool] = mapped_column(default=False, nullable=False)
     refresh_token: Mapped[Optional[str]]=mapped_column(String(255), nullable=True)
     created_at: Mapped[Optional[datetime]]= mapped_column(TIMESTAMP, server_default=func.now(), nullable=True)

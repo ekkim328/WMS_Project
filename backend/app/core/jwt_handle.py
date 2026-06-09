@@ -3,7 +3,6 @@ from fastapi.security import OAuth2PasswordBearer
 import jwt
 from datetime import datetime, timedelta, timezone
 from app.core.settings import settings
-import uuid
 
 
 # 해싱방식과 정책관리 (bcrypt 알고리즘 사용)

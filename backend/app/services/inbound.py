@@ -3,7 +3,7 @@ from sqlalchemy.future import select
 from app.db.models import Inbound
 from app.db.models import Inventory
 from app.db.scheme.inbounds import InboundCreate
-from app.db.scheme.inventorys import InventoryCreate
+from app.db.scheme.inventories import InventoryCreate
 from app.db.crud import InboundCrud, InventoryCrud
 from app.services.history import HistoryService
 

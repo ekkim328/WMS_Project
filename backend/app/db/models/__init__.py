@@ -1,5 +1,5 @@
 from .inbounds import Inbound
-from .inventorys import Inventory
+from .inventories import Inventory
 from .locations import Location
 from .outbounds import Outbound
 from .products import Product

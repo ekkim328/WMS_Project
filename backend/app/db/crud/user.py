@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
+from sqlalchemy import select
 from app.db.models import User
 from app.db.scheme.users import UserCreate, UserUpdate
 
@@ -13,11 +13,6 @@ class UserCrud:
         return result.scalar_one_or_none()
 
     @staticmethod
-    async def get_all(db:AsyncSession) -> list[User]:
-        result = await db.execute(select(User))
-        return result.scalars().all()
-
-    @staticmethod
     async def create(db:AsyncSession, user:UserCreate) -> User:
         db_user=User(**user.model_dump())
         db.add(db_user)
@@ -28,7 +23,7 @@ class UserCrud:
     async def update_by_id(db:AsyncSession, user_id:int, user:UserUpdate) -> User|None:
         db_user = await db.get(User, user_id)
         if db_user:
-            update_data = user.model_dump(exclude_unset=True)
+            update_data = user.model_dump(exclude_unset=True, exclude_none=True)
             for key, value in update_data.items():
                 setattr(db_user, key, value)
             await db.flush()

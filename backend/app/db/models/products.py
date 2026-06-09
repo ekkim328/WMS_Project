@@ -8,6 +8,7 @@ from typing import Optional
 class Product(Base):
     __tablename__="products"
     product_id:Mapped[int]=mapped_column(primary_key=True, index=True)
+    barcode: Mapped[str] = mapped_column(String(30), unique=True, nullable=False)
     product_name:Mapped[str]=mapped_column(String(50), nullable=False)
     category:Mapped[str]=mapped_column(String(40), nullable=False)
     price:Mapped[int]=mapped_column(nullable=False)
