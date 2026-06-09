@@ -1,24 +1,28 @@
-import { useState } from "react";
+import { Link, Navigate, Route, Routes } from "react-router-dom";
+
 import InboundPage from "./pages/InboundPage";
 import InventoryPage from "./pages/InventoryPage";
+import LoginPage from "./pages/LoginPage";
 import OutboundPage from "./pages/OutboundPage";
 
 function App() {
-  const [page, setPage] = useState("inventory");
-
   return (
     <div>
       <h1>WMS 관리 시스템</h1>
 
       <nav>
-        <button onClick={() => setPage("inventory")}>재고 조회</button>
-        <button onClick={() => setPage("inbound")}>입고 관리</button>
-        <button onClick={() => setPage("outbound")}>출고 관리</button>
+        <Link to="/login">로그인</Link> | <Link to="/inventory">재고 조회</Link>{" "}
+        | <Link to="/inbound">입고 관리</Link> |{" "}
+        <Link to="/outbound">출고 관리</Link>
       </nav>
 
-      {page === "inventory" && <InventoryPage />}
-      {page === "inbound" && <InboundPage />}
-      {page === "outbound" && <OutboundPage />}
+      <Routes>
+        <Route path="/" element={<Navigate to="/login" />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/inventory" element={<InventoryPage />} />
+        <Route path="/inbound" element={<InboundPage />} />
+        <Route path="/outbound" element={<OutboundPage />} />
+      </Routes>
     </div>
   );
 }
