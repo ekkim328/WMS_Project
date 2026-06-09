@@ -12,7 +12,7 @@ class InboundCreate(BaseModel):
     product_id:int
     location_id:int
     inbound_qty:int=Field(ge=1)
-    inbound_date:datetime
+    inbound_date:datetime | None = None
 
 class InboundUpdate(BaseModel):
     inbound_qty:int | None=None

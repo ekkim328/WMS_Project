@@ -31,7 +31,7 @@ function OutboundPage() {
     await createOutbound({
       product_id: Number(form.product_id),
       location_id: Number(form.location_id),
-      inbound_qty: Number(form.outbound_qty),
+      outbound_qty: Number(form.outbound_qty),
     });
 
     setForm({ product_id: "", location_id: "", outbound_qty: "" });
