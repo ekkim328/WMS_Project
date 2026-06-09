@@ -8,6 +8,7 @@ class ProductCrud:
     @staticmethod
     async def create_product(db:AsyncSession, product_data:ProductCreate):
         new_product = Product(
+            barcode=product_data.barcode,
             product_name=product_data.product_name,
             category = product_data.category,
             price = product_data.price

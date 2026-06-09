@@ -6,7 +6,7 @@ from typing import Optional
 
 
 class Inventory(Base):
-    __tablename__="inventorys"
+    __tablename__="inventories"
     inventory_id:Mapped[int]=mapped_column(primary_key=True, index=True)
     product_id:Mapped[int]=mapped_column(ForeignKey("products.product_id"), nullable=False)
     location_id:Mapped[int]=mapped_column(ForeignKey("locations.location_id"), nullable=False)
