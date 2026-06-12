@@ -28,12 +28,17 @@ class OutboundService:
     @staticmethod
     async def create(db: AsyncSession, outbound: OutboundCreate):
         try:
-            query = select(Inventory)
-            query = query.filter(Inventory.product_id == outbound.product_id)
-            query = query.filter(Inventory.location_id == outbound.location_id)
+            query = (
+                select(Inventory)
+                .where(
+                    Inventory.product_id == outbound.product_id,
+                    Inventory.location_id == outbound.location_id,
+                )
+                .with_for_update()
+            )
 
             result = await db.execute(query)
-            db_inventory = result.scalars().first()
+            db_inventory = result.scalar_one_or_none()
 
             if db_inventory and db_inventory.stock_qty > outbound.outbound_qty:
                 db_inventory.stock_qty -= outbound.outbound_qty
@@ -45,7 +50,7 @@ class OutboundService:
                 available_qty = db_inventory.stock_qty if db_inventory else 0
                 shortage_qty = outbound.outbound_qty - available_qty
 
-                await ShortageService.create(
+                db_shortage = await ShortageService.create(
                     db=db,
                     product_id=outbound.product_id,
                     location_id=outbound.location_id,
@@ -59,7 +64,7 @@ class OutboundService:
                     db=db,
                     event_type="shortage",
                     target_table="shortages",
-                    target_id=None,
+                    target_id=db_shortage.shortage_id,
                     product_id=outbound.product_id,
                     location_id=outbound.location_id,
                     qty=outbound.outbound_qty,

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.auth import get_current_username
 from app.db.database import get_db
 from app.db.scheme.histories import HistoryResponse
 from app.db.crud.history import HistoryCrud
@@ -8,7 +9,8 @@ from app.db.crud.history import HistoryCrud
 
 router = APIRouter(
     prefix="/history",
-    tags=["History"]
+    tags=["History"],
+    dependencies=[Depends(get_current_username)],
 )
 
 

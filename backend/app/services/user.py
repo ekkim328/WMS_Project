@@ -1,4 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
 from app.db.models import User
 from app.db.scheme.users import UserCreate, UserUpdate
 from app.db.crud import UserCrud
@@ -33,6 +34,8 @@ class UserService:
         #중복 email확인
         if await UserCrud.get_by_email(db, user.email):
             raise HTTPException(status_code=400,  detail="이미 사용중인 이메일이다")
+        if await UserCrud.get_by_username(db, user.username):
+            raise HTTPException(status_code=400, detail="이미 사용중인 사용자 이름이다")
         
         #username없으면 -> username, password, email을 디비에 저장해야함
         hash_pw=get_password_hash(user.password) #비번 암호화해서 들어감
@@ -44,8 +47,12 @@ class UserService:
             await db.refresh(db_user)
             return db_user
         
-        except Exception:
-            raise HTTPException(status_code=401, detail="잘못된 이메일 또는 비번이다")
+        except IntegrityError as exc:
+            await db.rollback()
+            raise HTTPException(
+                status_code=400,
+                detail="이미 사용중인 이메일 또는 사용자 이름이다",
+            ) from exc
 
     @staticmethod
     async def login(db:AsyncSession, f_data:OAuth2PasswordRequestForm):

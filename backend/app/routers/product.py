@@ -11,7 +11,7 @@ router = APIRouter(prefix="/products", tags=["Product"], dependencies=[Depends(g
 
 
 #상품 추가
-@router.post("", response_model=ProductCreate)
+@router.post("", response_model=ProductRead)
 async def create_product(product:ProductCreate,db:AsyncSession = Depends(get_db)):
     db_product=ProductService.create_product_service(db,product)
     return await db_product

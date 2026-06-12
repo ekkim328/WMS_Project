@@ -24,4 +24,4 @@ class OutboundCrud:
 
         result = await db.execute(semiresult)
 
-        return result.scalars.all()
+        return result.scalars().all()

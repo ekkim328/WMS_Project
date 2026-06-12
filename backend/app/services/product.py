@@ -8,19 +8,28 @@ from app.db.scheme.products import ProductCreate, ProductUpdate
 
 class ProductService:
     async def create_product_service(db: AsyncSession, product_data: ProductCreate):
-        stmt = select(Product).where(
-            Product.product_name == product_data.product_name,
-            Product.category == product_data.category
-        )
-        result = await db.execute(stmt)
-        existing_product = result.scalar_one_or_none()
+        try:
+            stmt = select(Product).where(
+                Product.product_name == product_data.product_name,
+                Product.category == product_data.category
+            )
+            result = await db.execute(stmt)
+            existing_product = result.scalar_one_or_none()
 
-        if existing_product:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="이미 존재하는 상품입니다")
-        new_product = await ProductCrud.create_product(db, product_data)
-        await db.commit()
-        await db.refresh(new_product)
-        return new_product
+            if existing_product:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="이미 존재하는 상품입니다")
+            new_product = await ProductCrud.create_product(db, product_data)
+            await db.commit()
+            await db.refresh(new_product)
+            return new_product
+        except HTTPException:
+            raise
+        except IntegrityError as exc:
+            await db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="이미 사용 중인 바코드입니다",
+            ) from exc
 
 
     async def get_all_products_service(db: AsyncSession):
@@ -53,5 +62,5 @@ class ProductService:
             await db.commit()
             return db_product
         except IntegrityError:
+            await db.rollback()
             raise HTTPException(status_code=400, detail="해당 상품은 삭제할 수 없습니다")
-        

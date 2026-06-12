@@ -19,7 +19,7 @@ class InventoryCrud:
 
         result = await db.execute(semiresult)
 
-        return result.scalars.all()
+        return result.scalars().all()
     
     @staticmethod
     async def update_by_id(db:AsyncSession, inventory_id:int, inventory:InventoryUpdate) -> Inventory|None:

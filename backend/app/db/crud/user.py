@@ -8,6 +8,11 @@ from app.db.scheme.users import UserCreate, UserUpdate
 # scalar_one_or_none : 결과 1개면 객체반환, 없으면 none반환
 class UserCrud:
     @staticmethod
+    async def get_all(db: AsyncSession) -> list[User]:
+        result = await db.execute(select(User).order_by(User.user_id))
+        return list(result.scalars().all())
+
+    @staticmethod
     async def get_by_id(db:AsyncSession, user_id:int) -> User|None:
         result = await db.execute(select(User).filter(User.user_id==user_id))
         return result.scalar_one_or_none()

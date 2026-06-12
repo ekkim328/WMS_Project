@@ -8,19 +8,28 @@ from app.db.scheme.locations import LocationCreate, LocationUpdate
 
 class LocationService:
     async def create_location_service(db: AsyncSession, location_data: LocationCreate):
-        stmt = select(Location).where(
-            Location.location_name == location_data.location_name,
-            Location.zone == location_data.zone
-        )
-        result = await db.execute(stmt)
-        existing_location = result.scalar_one_or_none()
+        try:
+            stmt = select(Location).where(
+                Location.location_name == location_data.location_name,
+                Location.zone == location_data.zone
+            )
+            result = await db.execute(stmt)
+            existing_location = result.scalar_one_or_none()
 
-        if existing_location:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="이미 존재하는 로케이션입니다")
-        new_location = await LocationCrud.create_location(db, location_data)
-        await db.commit()
-        await db.refresh(new_location)
-        return new_location
+            if existing_location:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="이미 존재하는 로케이션입니다")
+            new_location = await LocationCrud.create_location(db, location_data)
+            await db.commit()
+            await db.refresh(new_location)
+            return new_location
+        except HTTPException:
+            raise
+        except IntegrityError as exc:
+            await db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="이미 존재하는 로케이션입니다",
+            ) from exc
 
     async def get_location_by_id_service(db: AsyncSession, location_id: int):
         db_location = await LocationCrud.get_location_by_id(db, location_id)
@@ -47,5 +56,5 @@ class LocationService:
             await db.commit()
             return db_location
         except IntegrityError:
+            await db.rollback()
             raise HTTPException(status_code=400, detail="사용 중인 로케이션은 삭제할 수 없습니다")
-        

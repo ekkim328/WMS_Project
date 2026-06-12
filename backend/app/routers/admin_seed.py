@@ -9,12 +9,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from pydantic import BaseModel
 
-from app.core.auth import get_current_username
+from app.core.auth import get_current_admin
 from app.db.database import get_db
 from app.db.scheme.products import ProductCreate
 from app.db.scheme.locations import LocationCreate
 from app.db.scheme.inbounds import InboundCreate
 from app.db.scheme.outbounds import OutboundCreate
+
 
 from app.services.shortage import ShortageService
 from app.services.history import HistoryService
@@ -38,7 +39,7 @@ class SeedShortageCreate(BaseModel):
 router = APIRouter(
     prefix="/admin/seed",
     tags=["Admin Seed"],
-    dependencies=[Depends(get_current_username)],
+    dependencies=[Depends(get_current_admin)],
 )
 
 
@@ -134,7 +135,7 @@ async def seed_locations(db: AsyncSession = Depends(get_db)):
                     zone=zone,
                 )
 
-                await LocationService.create(db, location)
+                await LocationService.create_location_service(db, location)
                 count += 1
 
     await db.commit()

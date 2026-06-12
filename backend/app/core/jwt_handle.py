@@ -1,4 +1,5 @@
 from passlib.context import CryptContext
+from fastapi import HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 import jwt
 from datetime import datetime, timedelta, timezone
@@ -40,5 +41,19 @@ def decode_token(token:str) -> dict:
 
 
 def verify_token(token:str)->str:
-    payload = decode_token(token)
-    return payload.get("username")
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid or expired token",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    try:
+        payload = decode_token(token)
+    except jwt.InvalidTokenError as exc:
+        raise credentials_exception from exc
+
+    username = payload.get("username")
+    if not username:
+        raise credentials_exception
+
+    return username

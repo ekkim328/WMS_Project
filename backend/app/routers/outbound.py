@@ -13,6 +13,6 @@ async def get_outbounds(product_id:int=Query(None), location_id:int=Query(None),
     return await OutboundService.get_outbounds(db, product_id, location_id)
 
 @router.post("", response_model=OutboundRead)
-async def create_inbound(inbound:OutboundCreate, db:AsyncSession=Depends(get_db)):
-    db_outbound = await OutboundService.create(db, inbound)
+async def create_outbound(outbound:OutboundCreate, db:AsyncSession=Depends(get_db)):
+    db_outbound = await OutboundService.create(db, outbound)
     return db_outbound
