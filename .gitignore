@@ -6,3 +6,4 @@ __pycache__
 
 # 개인 설정 파일
 .env
+*.pem
