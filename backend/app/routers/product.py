@@ -10,28 +10,6 @@ import csv
 router = APIRouter(prefix="/products", tags=["Product"], dependencies=[Depends(get_current_username)])
 
 
-# 더미 상품 100개 생성
-@router.post("/csv-import")
-async def import_products_csv(db: AsyncSession = Depends(get_db)):
-    csv_path = Path(__file__).resolve().parents[2] / "data" / "products.csv"
-
-    with open(csv_path, encoding="utf-8-sig") as f:
-        reader = csv.DictReader(f)
-
-        for row in reader:
-            print(row)
-
-            product = ProductCreate(
-                barcode=str(row["barcode"]),
-                product_name=row["product_name"],
-                category=row["category"],
-                price=int(row["price"])
-            )
-
-            await ProductService.create_product_service(db, product)
-
-    return {"message": "csv import 완료"}
-
 #상품 추가
 @router.post("", response_model=ProductCreate)
 async def create_product(product:ProductCreate,db:AsyncSession = Depends(get_db)):

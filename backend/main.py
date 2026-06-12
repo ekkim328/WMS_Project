@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 from app.routers import user, inbound, outbound, inventory, product, location, history
 load_dotenv(dotenv_path=".env")
 
+from app.routers.admin_seed import router as admin_seed_router
+
 # 애플리케이션의 시작과 종료 시 실행될 작업을 정의함
 # 시작/끝을 비동기적으로 처리
 @asynccontextmanager
@@ -33,3 +35,4 @@ app.include_router(inventory.router)
 app.include_router(product.router)
 app.include_router(location.router)
 app.include_router(history.router)
+app.include_router(admin_seed_router)
