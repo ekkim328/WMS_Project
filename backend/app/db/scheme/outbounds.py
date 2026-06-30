@@ -26,3 +26,12 @@ class OutboundInDB(OutboundBase):
 
 class OutboundRead(OutboundInDB):
     pass
+
+
+class OutboundForecastRead(BaseModel):
+    predicted_qty: int
+    predicted_qty_raw: float
+    target_date: str
+    based_on_date: str
+    device: str
+    basis: dict

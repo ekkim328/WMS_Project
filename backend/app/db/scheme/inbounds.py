@@ -26,3 +26,31 @@ class InboundInDB(InboundBase):
 
 class InboundRead(InboundInDB):
     pass
+
+
+class InboundLocationAlternative(BaseModel):
+    location_id: int
+    location_name: str | None = None
+    zone: str | None = None
+    score: float
+    reason: str
+
+
+class InboundLocationRecommendationRead(BaseModel):
+    location_id: int
+    location_name: str | None = None
+    zone: str | None = None
+    confidence: float
+    score: float
+    reason: str
+    alternatives: list[InboundLocationAlternative] = []
+
+
+class InboundForecastRead(BaseModel):
+    product_id: int
+    predicted_qty: int
+    predicted_qty_raw: float
+    target_date: str
+    based_on_date: str
+    device: str
+    basis: dict

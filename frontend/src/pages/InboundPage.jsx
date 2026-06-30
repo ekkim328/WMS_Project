@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { createInbound, getInbounds } from "../api/inbound";
+import { createInbound, getInboundForecast, getInboundLocationRecommendation, getInbounds } from "../api/inbound";
 import Icon from "../components/Icon";
 
 const emptyForm = { product_id: "", location_id: "", inbound_qty: "" };
@@ -10,6 +10,12 @@ function InboundPage() {
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [forecast, setForecast] = useState(null);
+  const [forecastLoading, setForecastLoading] = useState(false);
+  const [forecastError, setForecastError] = useState(null);
+  const [recommendation, setRecommendation] = useState(null);
+  const [recommendationLoading, setRecommendationLoading] = useState(false);
+  const [recommendationError, setRecommendationError] = useState(null);
   const [message, setMessage] = useState(null);
 
   const loadInbounds = async () => {
@@ -36,7 +42,64 @@ function InboundPage() {
   }, []);
 
   const handleChange = (event) => {
-    setForm((current) => ({ ...current, [event.target.name]: event.target.value }));
+    const { name, value } = event.target;
+    setForm((current) => ({ ...current, [name]: value }));
+    if (name === "product_id") {
+      setForecast(null);
+      setForecastError(null);
+    }
+    if (name === "product_id" || name === "inbound_qty") {
+      setRecommendation(null);
+      setRecommendationError(null);
+    }
+  };
+
+  const handleForecastInbound = async () => {
+    setForecastLoading(true);
+    setForecastError(null);
+    setMessage(null);
+
+    try {
+      const data = await getInboundForecast({
+        product_id: Number(form.product_id),
+      });
+      setForecast(data);
+    } catch (error) {
+      console.error(error);
+      setForecastError(error.response?.data?.detail ?? "AI inbound forecast is unavailable.");
+    } finally {
+      setForecastLoading(false);
+    }
+  };
+
+  const handleApplyForecast = () => {
+    if (!forecast) return;
+    setForm((current) => ({ ...current, inbound_qty: String(forecast.predicted_qty) }));
+  };
+
+  const handleRecommendLocation = async () => {
+    setRecommendationLoading(true);
+    setRecommendationError(null);
+    setMessage(null);
+
+    try {
+      const data = await getInboundLocationRecommendation({
+        product_id: Number(form.product_id),
+        inbound_qty: Number(form.inbound_qty),
+      });
+      setRecommendation(data);
+      setForm((current) => ({ ...current, location_id: String(data.location_id) }));
+    } catch (error) {
+      console.error(error);
+      setRecommendationError(error.response?.data?.detail ?? "AI recommendation is unavailable.");
+    } finally {
+      setRecommendationLoading(false);
+    }
+  };
+
+  const handleApplyRecommendation = () => {
+    if (!recommendation) return;
+    setForm((current) => ({ ...current, location_id: String(recommendation.location_id) }));
   };
 
   const handleSubmit = async (event) => {
@@ -51,6 +114,8 @@ function InboundPage() {
         inbound_qty: Number(form.inbound_qty),
       });
       setForm(emptyForm);
+      setForecast(null);
+      setRecommendation(null);
       await loadInbounds();
       setMessage({ type: "success", text: "입고가 정상적으로 등록되었습니다." });
     } catch (error) {
@@ -82,6 +147,20 @@ function InboundPage() {
             <label className="field"><span>로케이션 ID</span><input min="1" name="location_id" placeholder="예: 28" required type="number" value={form.location_id} onChange={handleChange} /></label>
             <label className="field"><span>입고 수량</span><div className="input-with-unit"><input min="1" name="inbound_qty" placeholder="0" required type="number" value={form.inbound_qty} onChange={handleChange} /><span>EA</span></div></label>
 
+            <div className="ai-control">
+              <button className="secondary-button" disabled={forecastLoading || !form.product_id} type="button" onClick={handleForecastInbound}>
+                {forecastLoading ? "AI forecasting..." : "AI qty"}<Icon name="chart" size={18} />
+              </button>
+              <small>상품 ID 입력 후 예측 가능</small>
+            </div>
+
+            <div className="ai-control">
+              <button className="secondary-button" disabled={recommendationLoading || !form.product_id || !form.inbound_qty} type="button" onClick={handleRecommendLocation}>
+                {recommendationLoading ? "AI checking..." : "AI location"}<Icon name="location" size={18} />
+              </button>
+              <small>상품 ID와 입고수량 입력 후 추천</small>
+            </div>
+
             {message && <div className={`form-message ${message.type}`} role="status"><Icon name={message.type === "success" ? "check" : "alert"} size={18} />{message.text}</div>}
 
             <button className="primary-button" disabled={submitting} type="submit">
@@ -93,6 +172,44 @@ function InboundPage() {
         <div className="operation-summary inbound-summary">
           <span>누적 입고 수량</span><strong>{totalInbound.toLocaleString()}<small> EA</small></strong>
           <p>현재 조회된 입고 기록 {inbounds.length.toLocaleString()}건의 합계입니다.</p>
+          <div className="ai-panel">
+            <div>
+              <span>AI QTY</span>
+              {forecast ? (
+                <strong>{forecast.predicted_qty.toLocaleString()}<small>EA</small></strong>
+              ) : (
+                <strong>--<small>EA</small></strong>
+              )}
+              <small>{forecast ? `${forecast.target_date} / PRD-${forecast.product_id}` : forecastError ?? "Inbound quantity forecast"}</small>
+            </div>
+            <div className="ai-actions">
+              <button disabled={forecastLoading || !form.product_id} title="Forecast inbound quantity" type="button" onClick={handleForecastInbound}>
+                <Icon name="chart" size={15} />
+              </button>
+              <button disabled={!forecast} title="Apply quantity" type="button" onClick={handleApplyForecast}>
+                <Icon name="check" size={15} />
+              </button>
+            </div>
+          </div>
+          <div className="ai-panel">
+            <div>
+              <span>AI LOCATION</span>
+              {recommendation ? (
+                <strong>LOC-{recommendation.location_id}<small>{recommendation.zone ?? ""}</small></strong>
+              ) : (
+                <strong>--<small>LOC</small></strong>
+              )}
+              <small>{recommendation ? `${Math.round(recommendation.confidence * 100)}% / ${recommendation.reason}` : recommendationError ?? "Inbound location recommendation"}</small>
+            </div>
+            <div className="ai-actions">
+              <button disabled={recommendationLoading || !form.product_id || !form.inbound_qty} title="Recommend location" type="button" onClick={handleRecommendLocation}>
+                <Icon name="chart" size={15} />
+              </button>
+              <button disabled={!recommendation} title="Apply location" type="button" onClick={handleApplyRecommendation}>
+                <Icon name="check" size={15} />
+              </button>
+            </div>
+          </div>
           <div className="summary-graphic"><Icon name="inbound" size={48} /></div>
         </div>
       </div>

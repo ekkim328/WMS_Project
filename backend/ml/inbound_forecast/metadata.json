@@ -1,0 +1,45 @@
+{
+  "model_type": "InboundLSTM",
+  "target": "next_day_inbound_qty",
+  "features": [
+    "product_id",
+    "category_code",
+    "price",
+    "current_stock_qty",
+    "weekday_num",
+    "month",
+    "day",
+    "is_weekend",
+    "inbound_qty",
+    "inbound_count",
+    "outbound_qty",
+    "outbound_count",
+    "shortage_qty",
+    "shortage_count",
+    "prev_inbound_qty",
+    "prev_outbound_qty",
+    "avg3_inbound_qty",
+    "avg7_inbound_qty",
+    "avg14_inbound_qty",
+    "avg3_outbound_qty",
+    "avg7_outbound_qty",
+    "avg14_outbound_qty",
+    "avg3_shortage_qty",
+    "avg7_shortage_qty",
+    "avg14_shortage_qty"
+  ],
+  "window_size": 14,
+  "input_dim": 25,
+  "category_map": {
+    "생활용품": 0,
+    "식품": 1,
+    "음료": 2,
+    "전자제품": 3
+  },
+  "metrics": {
+    "mae": 6.866503715515137,
+    "rmse": 21.836889266967773
+  },
+  "created_at": "2026-06-30T18:22:18",
+  "device": "cuda"
+}

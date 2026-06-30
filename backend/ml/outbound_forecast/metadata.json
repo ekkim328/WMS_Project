@@ -1,0 +1,23 @@
+{
+  "features": [
+    "weekday_num",
+    "month",
+    "day",
+    "is_weekend",
+    "is_holiday",
+    "event",
+    "promo",
+    "prev_qty",
+    "avg7_qty",
+    "avg7_food_qty",
+    "avg7_drink_qty",
+    "avg7_daily_qty",
+    "avg7_cold_qty",
+    "avg7_beauty_qty",
+    "top_sku_ratio",
+    "heavy_item_ratio",
+    "cold_chain_ratio"
+  ],
+  "window_size": 14,
+  "input_dim": 17
+}

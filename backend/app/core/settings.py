@@ -1,6 +1,9 @@
 from pydantic_settings import BaseSettings
 from pydantic import Field
 from datetime import timedelta
+from pathlib import Path
+
+ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
 
 # BaseSettings 환경변수 기반 설정 관리 클래스(DB, API키, 환경관련설정)
 # alias로 환경변수값이 있는지 확인 -> 해당 값으로 필드 채움
@@ -17,7 +20,7 @@ class Settings(BaseSettings):
     refresh_token_expire_seconds:int=Field(604800, alias="REFRESH_TOKEN_EXPIRE")
 
     class Config:
-        env_file=".env"
+        env_file=ENV_FILE
         case_sensitive=True # 환경변수 이름 대소문자를 구분
         extra="allow"   # 모델에 정의되지 않은 추가 필드도 허용
         populate_by_name=True   # 필드 이름과 alias로 값을 채울 수 있음

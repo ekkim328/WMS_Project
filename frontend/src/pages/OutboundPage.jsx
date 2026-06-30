@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { createOutbound, getOutbounds } from "../api/outbound";
+import { createOutbound, getOutboundForecast, getOutbounds } from "../api/outbound";
 import Icon from "../components/Icon";
 
 const emptyForm = { product_id: "", location_id: "", outbound_qty: "" };
@@ -10,11 +10,30 @@ function OutboundPage() {
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [forecast, setForecast] = useState(null);
+  const [forecastLoading, setForecastLoading] = useState(false);
+  const [forecastError, setForecastError] = useState(null);
+  const [basisOpen, setBasisOpen] = useState(false);
   const [message, setMessage] = useState(null);
 
   const loadOutbounds = async () => {
     const data = await getOutbounds();
     setOutbounds(data);
+  };
+
+  const loadForecast = async () => {
+    setForecastLoading(true);
+    setForecastError(null);
+
+    try {
+      const data = await getOutboundForecast();
+      setForecast(data);
+    } catch (error) {
+      console.error(error);
+      setForecastError(error.response?.data?.detail ?? "AI forecast is unavailable.");
+    } finally {
+      setForecastLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -27,6 +46,13 @@ function OutboundPage() {
         if (active) setMessage({ type: "error", text: "출고 내역을 불러오지 못했습니다." });
       })
       .finally(() => { if (active) setLoading(false); });
+
+    getOutboundForecast()
+      .then((data) => { if (active) setForecast(data); })
+      .catch((error) => {
+        console.error(error);
+        if (active) setForecastError(error.response?.data?.detail ?? "AI forecast is unavailable.");
+      });
 
     return () => { active = false; };
   }, []);
@@ -89,6 +115,25 @@ function OutboundPage() {
         <div className="operation-summary outbound-summary">
           <span>누적 출고 수량</span><strong>{totalOutbound.toLocaleString()}<small> EA</small></strong>
           <p>현재 조회된 출고 기록 {outbounds.length.toLocaleString()}건의 합계입니다.</p>
+          <div className="ai-panel">
+            <div>
+              <span>TODAY FORECAST</span>
+              {forecast ? (
+                <strong>{forecast.predicted_qty.toLocaleString()}<small>EA</small></strong>
+              ) : (
+                <strong>--<small>EA</small></strong>
+              )}
+              <small>{forecast ? `${forecast.target_date} / ${forecast.device}` : forecastError ?? "Today outbound quantity"}</small>
+            </div>
+            <div className="ai-actions">
+              <button disabled={forecastLoading} title="Refresh forecast" type="button" onClick={loadForecast}>
+                <Icon name="chart" size={15} />
+              </button>
+              <button disabled={!forecast} title="예측근거" type="button" onClick={() => setBasisOpen(true)}>
+                <Icon name="alert" size={15} />
+              </button>
+            </div>
+          </div>
           <div className="summary-graphic"><Icon name="outbound" size={48} /></div>
         </div>
       </div>
@@ -101,7 +146,53 @@ function OutboundPage() {
           </tbody></table></div>
         )}
       </article>
+
+      {basisOpen && forecast && (
+        <ForecastBasisModal forecast={forecast} onClose={() => setBasisOpen(false)} />
+      )}
     </section>
+  );
+}
+
+function ForecastBasisModal({ forecast, onClose }) {
+  const basis = forecast.basis ?? {};
+  const features = basis.features ?? {};
+  const source = basis.source ?? {};
+  const notes = basis.notes ?? [];
+
+  return (
+    <div className="modal-backdrop" role="presentation" onClick={onClose}>
+      <article className="modal-card" role="dialog" aria-modal="true" aria-label="예측근거" onClick={(event) => event.stopPropagation()}>
+        <div className="modal-head">
+          <div><span>FORECAST BASIS</span><h3>예측근거</h3></div>
+          <button type="button" onClick={onClose}>닫기</button>
+        </div>
+        <div className="basis-grid">
+          <div><span>예측일</span><strong>{forecast.target_date}</strong></div>
+          <div><span>예측수량</span><strong>{forecast.predicted_qty.toLocaleString()} EA</strong></div>
+          <div><span>기준 데이터</span><strong>{basis.based_on_date ?? forecast.based_on_date}</strong></div>
+          <div><span>실행 장치</span><strong>{basis.device ?? forecast.device}</strong></div>
+        </div>
+        <div className="basis-section">
+          <h4>입력 지표</h4>
+          <dl>
+            <div><dt>요일 번호</dt><dd>{features.weekday_num}</dd></div>
+            <div><dt>월/일</dt><dd>{features.month}/{features.day}</dd></div>
+            <div><dt>주말 여부</dt><dd>{features.is_weekend ? "Y" : "N"}</dd></div>
+            <div><dt>행사/프로모션</dt><dd>{features.event}/{features.promo}</dd></div>
+            <div><dt>전일 출고량</dt><dd>{Number(features.prev_qty ?? 0).toLocaleString()} EA</dd></div>
+            <div><dt>7일 평균</dt><dd>{Number(features.avg7_qty ?? 0).toLocaleString()} EA</dd></div>
+            <div><dt>상위 SKU 비율</dt><dd>{features.top_sku_ratio}</dd></div>
+            <div><dt>저온/중량 비율</dt><dd>{features.cold_chain_ratio}/{features.heavy_item_ratio}</dd></div>
+          </dl>
+        </div>
+        <div className="basis-section">
+          <h4>데이터 기준</h4>
+          <p>마지막 기록일 {source.last_recorded_date ?? forecast.based_on_date}, 마지막 출고량 {Number(source.last_recorded_outbound_qty ?? 0).toLocaleString()} EA 기준으로 최근 패턴을 사용했습니다.</p>
+          {notes.map((note) => <p key={note}>{note}</p>)}
+        </div>
+      </article>
+    </div>
   );
 }
 
