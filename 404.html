@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>STOCKFLOW Warehouse OS</title>
+    <script>
+      (function () {
+        var pathParts = window.location.pathname.split("/").filter(Boolean);
+        var isGithubProjectPage =
+          window.location.hostname.endsWith("github.io") && pathParts.length > 0;
+        var basePath = isGithubProjectPage ? "/" + pathParts[0] + "/" : "/";
+        var routeParts = isGithubProjectPage ? pathParts.slice(1) : pathParts;
+        var hashRoute = "/" + routeParts.join("/");
+
+        window.location.replace(
+          basePath + "#" + hashRoute + window.location.search + window.location.hash,
+        );
+      })();
+    </script>
+  </head>
+  <body>
+    <p>Redirecting to STOCKFLOW...</p>
+  </body>
+</html>
