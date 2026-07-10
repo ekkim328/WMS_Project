@@ -16,7 +16,7 @@ services:
       - key: JWT_ALGORITHM
         value: HS256
       - key: ACCESS_TOKEN_EXPIRE
-        value: 900
+        value: 0
       - key: REFRESH_TOKEN_EXPIRE
         value: 604800
 

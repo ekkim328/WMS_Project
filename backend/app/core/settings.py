@@ -20,7 +20,7 @@ class Settings(BaseSettings):
 
     secret_key: str = Field(..., alias="SECRET_KEY")
     jwt_algorithm: str = Field("HS256", alias="JWT_ALGORITHM")
-    access_token_expire_seconds: int = Field(900, alias="ACCESS_TOKEN_EXPIRE")
+    access_token_expire_seconds: int = Field(0, alias="ACCESS_TOKEN_EXPIRE")
     refresh_token_expire_seconds: int = Field(604800, alias="REFRESH_TOKEN_EXPIRE")
 
     class Config:
@@ -79,7 +79,9 @@ class Settings(BaseSettings):
         return self._with_driver(self.raw_database_url, async_driver=False)
 
     @property
-    def access_token_expire(self) -> timedelta:
+    def access_token_expire(self) -> timedelta | None:
+        if self.access_token_expire_seconds <= 0:
+            return None
         return timedelta(seconds=self.access_token_expire_seconds)
 
     @property

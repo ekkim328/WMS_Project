@@ -20,10 +20,12 @@ def verify_password(plain_pw:str, hashed_pw:str) -> bool:
     trunc_password = plain_pw.encode('utf-8')[:72]
     return pwd_crypt.verify(trunc_password, hashed_pw)
 
-def create_token(username:str, expires_delta:timedelta, **kwargs) -> str:
+def create_token(username:str, expires_delta:timedelta | None, **kwargs) -> str:
     to_encode=kwargs.copy() #추가정보를 페이로드에 넣고 싶을 때 
-    expire=datetime.now(timezone.utc) + expires_delta
-    to_encode.update({"exp":expire, "username":username})
+    to_encode.update({"username":username})
+    if expires_delta is not None:
+        expire=datetime.now(timezone.utc) + expires_delta
+        to_encode.update({"exp":expire})
     encoded_jwt=jwt.encode(to_encode, settings.secret_key, algorithm=settings.jwt_algorithm)
     return encoded_jwt
 
