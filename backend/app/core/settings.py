@@ -1,52 +1,90 @@
-from pydantic_settings import BaseSettings
-from pydantic import Field
 from datetime import timedelta
 from pathlib import Path
+from urllib.parse import urlsplit, urlunsplit
+
+from pydantic import Field
+from pydantic_settings import BaseSettings
+
 
 ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
 
-# BaseSettings 환경변수 기반 설정 관리 클래스(DB, API키, 환경관련설정)
-# alias로 환경변수값이 있는지 확인 -> 해당 값으로 필드 채움
-class Settings(BaseSettings):
-    db_user:str=Field(..., alias="DB_USER")
-    db_password:str=Field(..., alias="DB_PASSWORD")
-    db_host:str=Field(..., alias="DB_HOST")
-    db_port:str=Field(..., alias="DB_PORT")
-    db_name:str=Field(..., alias="DB_NAME")
 
-    secret_key:str=Field(..., alias="SECRET_KEY")
-    jwt_algorithm:str=Field(..., alias="JWT_ALGORITHM")
-    access_token_expire_seconds:int=Field(900, alias="ACCESS_TOKEN_EXPIRE")
-    refresh_token_expire_seconds:int=Field(604800, alias="REFRESH_TOKEN_EXPIRE")
+class Settings(BaseSettings):
+    database_url: str | None = Field(None, alias="DATABASE_URL")
+
+    db_user: str | None = Field(None, alias="DB_USER")
+    db_password: str | None = Field(None, alias="DB_PASSWORD")
+    db_host: str | None = Field(None, alias="DB_HOST")
+    db_port: str | None = Field(None, alias="DB_PORT")
+    db_name: str | None = Field(None, alias="DB_NAME")
+
+    secret_key: str = Field(..., alias="SECRET_KEY")
+    jwt_algorithm: str = Field("HS256", alias="JWT_ALGORITHM")
+    access_token_expire_seconds: int = Field(900, alias="ACCESS_TOKEN_EXPIRE")
+    refresh_token_expire_seconds: int = Field(604800, alias="REFRESH_TOKEN_EXPIRE")
 
     class Config:
-        env_file=ENV_FILE
-        case_sensitive=True # 환경변수 이름 대소문자를 구분
-        extra="allow"   # 모델에 정의되지 않은 추가 필드도 허용
-        populate_by_name=True   # 필드 이름과 alias로 값을 채울 수 있음
+        env_file = ENV_FILE
+        case_sensitive = True
+        extra = "allow"
+        populate_by_name = True
 
-    # 동적 프로퍼티
-    # @property 데코레이터를 사용하면 메서드를 프로퍼티(속성)처럼 접근할 수 있다.
-    # ex) settings.db_url
     @property
-    def tmp_db(self) -> str:    #"root:1234@localhost:3306/fastapi"
-        return f"{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
-    
-    @property   # 비동기 DB URL
+    def tmp_db(self) -> str:
+        required = {
+            "DB_USER": self.db_user,
+            "DB_PASSWORD": self.db_password,
+            "DB_HOST": self.db_host,
+            "DB_PORT": self.db_port,
+            "DB_NAME": self.db_name,
+        }
+        missing = [key for key, value in required.items() if value is None]
+        if missing:
+            raise ValueError(
+                "DATABASE_URL or all legacy DB_* settings are required. "
+                f"Missing: {', '.join(missing)}"
+            )
+
+        return (
+            f"{self.db_user}:{self.db_password}@"
+            f"{self.db_host}:{self.db_port}/{self.db_name}"
+        )
+
+    @property
+    def raw_database_url(self) -> str:
+        return self.database_url or f"mysql://{self.tmp_db}"
+
+    @staticmethod
+    def _with_driver(url: str, async_driver: bool) -> str:
+        parsed = urlsplit(url)
+        scheme = parsed.scheme
+
+        if scheme == "postgres":
+            scheme = "postgresql"
+
+        if "+" not in scheme:
+            if scheme == "postgresql":
+                scheme = "postgresql+asyncpg" if async_driver else "postgresql+psycopg2"
+            elif scheme == "mysql":
+                scheme = "mysql+asyncmy" if async_driver else "mysql+pymysql"
+
+        return urlunsplit((scheme, parsed.netloc, parsed.path, parsed.query, parsed.fragment))
+
+    @property
     def db_url(self) -> str:
-        return f"mysql+asyncmy://{self.tmp_db}"
-    
-    @property   # 동기 DB URL
+        return self._with_driver(self.raw_database_url, async_driver=True)
+
+    @property
     def sync_db_url(self) -> str:
-        return f"mysql+pymysql://{self.tmp_db}"
-    
+        return self._with_driver(self.raw_database_url, async_driver=False)
+
     @property
     def access_token_expire(self) -> timedelta:
         return timedelta(seconds=self.access_token_expire_seconds)
-    # 초단위 -> timedelta 객체로 변환
 
     @property
     def refresh_token_expire(self) -> timedelta:
         return timedelta(seconds=self.refresh_token_expire_seconds)
-    
-settings=Settings()
+
+
+settings = Settings()

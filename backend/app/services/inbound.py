@@ -1,5 +1,4 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.dialects.mysql import insert as mysql_insert
 from sqlalchemy.future import select
 from app.db.models import Inbound
 from app.db.models import Inventory
@@ -26,15 +25,24 @@ class InboundService:
     @staticmethod
     async def create(db: AsyncSession, inbound: InboundCreate):
         try:
-            inventory_upsert = mysql_insert(Inventory).values(
-                product_id=inbound.product_id,
-                location_id=inbound.location_id,
-                stock_qty=inbound.inbound_qty,
+            result = await db.execute(
+                select(Inventory).where(
+                    Inventory.product_id == inbound.product_id,
+                    Inventory.location_id == inbound.location_id,
+                )
             )
-            inventory_upsert = inventory_upsert.on_duplicate_key_update(
-                stock_qty=Inventory.stock_qty + inbound.inbound_qty
-            )
-            await db.execute(inventory_upsert)
+            inventory = result.scalar_one_or_none()
+
+            if inventory:
+                inventory.stock_qty += inbound.inbound_qty
+            else:
+                db.add(
+                    Inventory(
+                        product_id=inbound.product_id,
+                        location_id=inbound.location_id,
+                        stock_qty=inbound.inbound_qty,
+                    )
+                )
 
             db_inbound = await InboundCrud.create(db, inbound)
 
