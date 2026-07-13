@@ -166,6 +166,11 @@ tbody tr:hover { background: #fafcfc; }
 .login-form { display: grid; gap: 17px; margin-top: 34px; }
 .login-form .field input { height: 48px; background: white; }
 .login-submit { min-height: 48px; margin-top: 5px; }
+.signup-card { width: min(430px, 100%); }
+.signup-form { gap: 14px; margin-top: 27px; }
+.auth-switch { margin: 22px 0 0; color: #7b8798; font-size: 11px; text-align: center; }
+.auth-switch a { color: var(--teal-dark); font-weight: 700; text-decoration: none; }
+.auth-switch a:hover { text-decoration: underline; }
 .login-help { margin: 22px 0 0; color: #a0a9b5; font-size: 9px; text-align: center; }
 
 @media (max-width: 1050px) {

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { login } from "../api/auth";
 import Icon from "../components/Icon";
@@ -93,6 +93,9 @@ function LoginPage() {
             </button>
           </form>
 
+          <p className="auth-switch">
+            아직 계정이 없으신가요? <Link to="/signup">회원가입</Link>
+          </p>
           <p className="login-help">접속에 문제가 있다면 시스템 관리자에게 문의하세요.</p>
         </div>
       </section>

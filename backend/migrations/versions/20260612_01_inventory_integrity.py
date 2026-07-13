@@ -51,7 +51,7 @@ def upgrade() -> None:
     bind = op.get_bind()
     inspector = sa.inspect(bind)
 
-    if not _has_unique_key(
+    if inspector.has_table("inventories") and not _has_unique_key(
         inspector, "inventories", ["product_id", "location_id"]
     ):
         _assert_no_duplicates("inventories", ["product_id", "location_id"])
@@ -62,7 +62,9 @@ def upgrade() -> None:
         )
 
     inspector = sa.inspect(bind)
-    if not _has_unique_key(inspector, "locations", ["location_name", "zone"]):
+    if inspector.has_table("locations") and not _has_unique_key(
+        inspector, "locations", ["location_name", "zone"]
+    ):
         _assert_no_duplicates("locations", ["location_name", "zone"])
         op.create_unique_constraint(
             "uq_location_name_zone",
@@ -71,6 +73,9 @@ def upgrade() -> None:
         )
 
     inspector = sa.inspect(bind)
+    if not inspector.has_table("outbounds") or not inspector.has_table("products"):
+        return
+
     product_foreign_keys = [
         foreign_key
         for foreign_key in inspector.get_foreign_keys("outbounds")
@@ -100,19 +105,26 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_constraint(
-        "fk_outbounds_product_id", "outbounds", type_="foreignkey"
-    )
-    op.create_foreign_key(
-        "fk_outbounds_product_id_locations",
-        "outbounds",
-        "locations",
-        ["product_id"],
-        ["location_id"],
-    )
-    op.drop_constraint(
-        "uq_location_name_zone", "locations", type_="unique"
-    )
-    op.drop_constraint(
-        "uq_inventory_product_location", "inventories", type_="unique"
-    )
+    inspector = sa.inspect(op.get_bind())
+
+    if inspector.has_table("outbounds") and inspector.has_table("locations"):
+        op.drop_constraint(
+            "fk_outbounds_product_id", "outbounds", type_="foreignkey"
+        )
+        op.create_foreign_key(
+            "fk_outbounds_product_id_locations",
+            "outbounds",
+            "locations",
+            ["product_id"],
+            ["location_id"],
+        )
+
+    if inspector.has_table("locations"):
+        op.drop_constraint(
+            "uq_location_name_zone", "locations", type_="unique"
+        )
+
+    if inspector.has_table("inventories"):
+        op.drop_constraint(
+            "uq_inventory_product_location", "inventories", type_="unique"
+        )

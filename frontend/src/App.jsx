@@ -5,6 +5,7 @@ import InboundPage from "./pages/InboundPage";
 import InventoryPage from "./pages/InventoryPage";
 import LoginPage from "./pages/LoginPage";
 import OutboundPage from "./pages/OutboundPage";
+import SignupPage from "./pages/SignupPage";
 import "./App.css";
 
 const navigation = [
@@ -24,12 +25,17 @@ function App() {
   const navigate = useNavigate();
   const isAuthenticated = Boolean(localStorage.getItem("access_token"));
 
-  if (location.pathname === "/login") {
+  if (location.pathname === "/login" || location.pathname === "/signup") {
     if (isAuthenticated) {
       return <Navigate to="/inventory" replace />;
     }
 
-    return <LoginPage />;
+    return (
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+      </Routes>
+    );
   }
 
   if (!isAuthenticated) {

@@ -1,5 +1,15 @@
 import api from "./axios";
 
+export const signup = async ({ username, name, password }) => {
+  const res = await api.post("/users", {
+    username,
+    name,
+    password,
+  });
+
+  return res.data;
+};
+
 export const login = async (username, password) => {
   const formData = new URLSearchParams();
 

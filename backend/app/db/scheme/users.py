@@ -1,14 +1,23 @@
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from datetime import datetime, timezone
 from typing import Annotated
 
 
 class UserBase(BaseModel):
-    email: EmailStr
-    username: str
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    username: Annotated[str, Field(min_length=1, max_length=40)]
+    name: Annotated[str, Field(min_length=1, max_length=100)]
 
 class UserCreate(UserBase):
-    password: Annotated[str, Field(max_length=72)]
+    password: Annotated[str, Field(min_length=8, max_length=72)]
+
+    @field_validator("password")
+    @classmethod
+    def validate_password_byte_length(cls, password: str) -> str:
+        if len(password.encode("utf-8")) > 72:
+            raise ValueError("비밀번호는 UTF-8 기준 72바이트 이하여야 합니다")
+        return password
 
 
 class UserLogin(BaseModel):
@@ -17,8 +26,8 @@ class UserLogin(BaseModel):
 
 
 class UserUpdate(BaseModel):
-    email: EmailStr | None = None
-    username: str | None = None
+    username: Annotated[str, Field(min_length=1, max_length=40)] | None = None
+    name: Annotated[str, Field(min_length=1, max_length=100)] | None = None
     password: Annotated[str, Field(max_length=72)] | None = None
 
 

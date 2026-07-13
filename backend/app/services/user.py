@@ -31,15 +31,11 @@ class UserService:
 
     @staticmethod
     async def signup(db:AsyncSession, user:UserCreate):
-        #중복 email확인
-        if await UserCrud.get_by_email(db, user.email):
-            raise HTTPException(status_code=400,  detail="이미 사용중인 이메일이다")
         if await UserCrud.get_by_username(db, user.username):
             raise HTTPException(status_code=400, detail="이미 사용중인 사용자 이름이다")
         
-        #username없으면 -> username, password, email을 디비에 저장해야함
         hash_pw=get_password_hash(user.password) #비번 암호화해서 들어감
-        user_create=UserCreate(username=user.username, password=hash_pw, email=user.email)
+        user_create=UserCreate(username=user.username, name=user.name, password=hash_pw)
 
         try:
             db_user=await UserCrud.create(db,user_create)
@@ -51,7 +47,7 @@ class UserService:
             await db.rollback()
             raise HTTPException(
                 status_code=400,
-                detail="이미 사용중인 이메일 또는 사용자 이름이다",
+                detail="이미 사용중인 사용자 이름이다",
             ) from exc
 
     @staticmethod
