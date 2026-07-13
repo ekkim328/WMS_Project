@@ -1,6 +1,7 @@
 import { NavLink, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 
 import Icon from "./components/Icon";
+import HomePage from "./pages/HomePage";
 import InboundPage from "./pages/InboundPage";
 import InventoryPage from "./pages/InventoryPage";
 import LoginPage from "./pages/LoginPage";
@@ -9,12 +10,14 @@ import SignupPage from "./pages/SignupPage";
 import "./App.css";
 
 const navigation = [
+  { to: "/home", label: "홈", icon: "home" },
   { to: "/inventory", label: "재고 현황", icon: "inventory" },
   { to: "/inbound", label: "입고 관리", icon: "inbound" },
   { to: "/outbound", label: "출고 관리", icon: "outbound" },
 ];
 
 const pageMeta = {
+  "/home": { eyebrow: "OVERVIEW", title: "홈" },
   "/inventory": { eyebrow: "WAREHOUSE", title: "재고 현황" },
   "/inbound": { eyebrow: "RECEIVING", title: "입고 관리" },
   "/outbound": { eyebrow: "SHIPPING", title: "출고 관리" },
@@ -27,7 +30,7 @@ function App() {
 
   if (location.pathname === "/login" || location.pathname === "/signup") {
     if (isAuthenticated) {
-      return <Navigate to="/inventory" replace />;
+      return <Navigate to="/home" replace />;
     }
 
     return (
@@ -42,7 +45,7 @@ function App() {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 
-  const currentPage = pageMeta[location.pathname] ?? pageMeta["/inventory"];
+  const currentPage = pageMeta[location.pathname] ?? pageMeta["/home"];
 
   const handleLogout = () => {
     localStorage.removeItem("access_token");
@@ -108,11 +111,12 @@ function App() {
 
         <div className="content-area">
           <Routes>
-            <Route path="/" element={<Navigate to="/inventory" replace />} />
+            <Route path="/" element={<Navigate to="/home" replace />} />
+            <Route path="/home" element={<HomePage />} />
             <Route path="/inventory" element={<InventoryPage />} />
             <Route path="/inbound" element={<InboundPage />} />
             <Route path="/outbound" element={<OutboundPage />} />
-            <Route path="*" element={<Navigate to="/inventory" replace />} />
+            <Route path="*" element={<Navigate to="/home" replace />} />
           </Routes>
         </div>
       </main>

@@ -20,7 +20,7 @@ function LoginPage() {
     try {
       await login(username, password);
       const destination = location.state?.from;
-      navigate(destination && destination !== "/login" ? destination : "/inventory", {
+      navigate(destination && destination !== "/login" ? destination : "/home", {
         replace: true,
       });
     } catch (requestError) {

@@ -122,6 +122,33 @@ tbody tr:hover { background: #fafcfc; }
 .operation-summary p { max-width: 210px; margin: 18px 0 0; font-size: 10px; line-height: 1.6; opacity: .65; }
 .summary-graphic { position: absolute; right: 24px; bottom: 22px; width: 76px; height: 76px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.17); border-radius: 50%; color: rgba(255,255,255,.8); background: rgba(255,255,255,.08); }
 .record-count { color: #95a0af; }
+.home-metric-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.home-metric { min-height: 106px; display: flex; align-items: center; gap: 16px; padding: 20px 22px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: 0 4px 15px rgba(24,39,67,.025); }
+.home-metric-icon { width: 44px; height: 44px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 11px; }
+.home-metric > div > span, .home-metric > div > strong { display: block; }
+.home-metric > div > span { color: #7a8495; font-size: 10px; font-weight: 600; }
+.home-metric > div > strong { margin-top: 8px; color: var(--ink); font-size: 23px; line-height: 1; letter-spacing: -.035em; }
+.home-metric strong small { color: #98a2b3; font-size: 10px; font-weight: 600; letter-spacing: 0; }
+.inbound-metric .home-metric-icon { color: #087e72; background: #e5f7f3; }
+.outbound-metric .home-metric-icon { color: #c36c1a; background: #fff3df; }
+.net-metric .home-metric-icon { color: #4b69bf; background: #edf2ff; }
+.flow-chart-card { overflow: hidden; }
+.chart-toolbar { padding-block: 19px; }
+.chart-legend { display: flex; align-items: center; gap: 18px; }
+.chart-legend span { display: inline-flex; align-items: center; gap: 7px; color: #667085; font-size: 10px; font-weight: 600; }
+.legend-dot { width: 9px; height: 9px; display: inline-block; border-radius: 50%; }
+.inbound-dot { background: #0e9f8f; }
+.outbound-dot { background: #e08a31; }
+.flow-chart-scroll { padding: 16px 20px 12px; overflow-x: auto; }
+.flow-chart { width: 100%; min-width: 700px; height: auto; display: block; overflow: visible; }
+.chart-grid-line { stroke: #e8edf1; stroke-width: 1; stroke-dasharray: 4 5; }
+.chart-axis-label { fill: #929dac; font-size: 10px; font-family: inherit; }
+.chart-line { fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.inbound-line { stroke: #0e9f8f; }
+.outbound-line { stroke: #e08a31; }
+.chart-point { stroke: white; stroke-width: 2.5; vector-effect: non-scaling-stroke; }
+.inbound-point { fill: #0e9f8f; }
+.outbound-point { fill: #e08a31; }
 .ai-panel { width: min(260px, 100%); display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 20px; padding: 12px; border: 1px solid rgba(255,255,255,.16); border-radius: 8px; background: rgba(255,255,255,.1); }
 .ai-panel span, .ai-panel small { display: block; }
 .ai-panel span { font-size: 9px; font-weight: 700; letter-spacing: .12em; opacity: .72; }
@@ -199,6 +226,7 @@ tbody tr:hover { background: #fafcfc; }
 
 @media (max-width: 1050px) {
   .metric-grid { grid-template-columns: repeat(2, 1fr); }
+  .home-metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .operation-layout { grid-template-columns: 1fr; }
   .operation-summary { min-height: 180px; }
 }
@@ -208,7 +236,7 @@ tbody tr:hover { background: #fafcfc; }
   .sidebar { position: static; height: auto; padding: 16px; }
   .brand { padding: 0 4px 14px; }
   .sidebar-label, .sidebar-footer { display: none; }
-  .sidebar-nav { grid-template-columns: repeat(4, 1fr); }
+  .sidebar-nav { grid-template-columns: repeat(5, 1fr); }
   .nav-item { justify-content: center; padding: 10px 8px; font-size: 11px; }
   .nav-item.active::before { left: 20%; right: 20%; bottom: -4px; width: auto; height: 2px; border-radius: 3px; }
   .topbar { height: 72px; padding: 0 20px; }
@@ -230,6 +258,9 @@ tbody tr:hover { background: #fafcfc; }
   .page-intro { align-items: flex-start; }
   .sync-badge, .section-tag { display: none; }
   .metric-grid { grid-template-columns: 1fr; }
+  .home-metric-grid { grid-template-columns: 1fr; }
+  .home-metric { min-height: 90px; }
+  .chart-toolbar { align-items: flex-start; }
   .metric-card { min-height: 125px; }
   .card-toolbar { align-items: flex-start; flex-direction: column; }
   .search-box { width: 100%; }

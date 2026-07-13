@@ -1,4 +1,10 @@
 const paths = {
+  home: (
+    <>
+      <path d="m3 10 9-7 9 7" />
+      <path d="M5 9v11h14V9M9 20v-6h6v6" />
+    </>
+  ),
   boxes: (
     <>
       <path d="m12 2 8 4.5v9L12 20l-8-4.5v-9L12 2Z" />
