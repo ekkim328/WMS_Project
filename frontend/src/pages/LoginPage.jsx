@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { login } from "../api/auth";
 import Icon from "../components/Icon";
 
 function LoginPage() {
   const navigate = useNavigate();
-  const location = useLocation();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -19,10 +18,7 @@ function LoginPage() {
 
     try {
       await login(username, password);
-      const destination = location.state?.from;
-      navigate(destination && destination !== "/login" ? destination : "/home", {
-        replace: true,
-      });
+      navigate("/home", { replace: true });
     } catch (requestError) {
       console.error(requestError);
       setError("아이디 또는 비밀번호를 다시 확인해 주세요.");

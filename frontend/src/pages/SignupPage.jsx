@@ -67,7 +67,7 @@ function SignupPage() {
     try {
       await signup({ username, name, password: form.password });
       await login(username, form.password);
-      navigate("/inventory", { replace: true });
+      navigate("/home", { replace: true });
     } catch (requestError) {
       console.error(requestError);
       setError(getRequestErrorMessage(requestError));
