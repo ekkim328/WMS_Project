@@ -20,6 +20,7 @@ RUN pip install --no-cache-dir -r backend/requirements.txt
 RUN pip install --no-cache-dir -r backend/ai_requirements.txt
 
 COPY backend ./backend
+COPY korean_ecommerce_outbound_2022_2025_with_categories.csv ./backend/data/korean_ecommerce_outbound_2022_2025_with_categories.csv
 COPY --from=frontend-build /app/frontend/dist ./frontend/dist
 
 WORKDIR /app/backend
