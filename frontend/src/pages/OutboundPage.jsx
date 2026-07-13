@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import { createOutbound, getOutboundForecast, getOutbounds } from "../api/outbound";
 import Icon from "../components/Icon";
+import WarehouseLookupModal, { LookupField } from "../components/WarehouseLookupModal";
 
 const emptyForm = { product_id: "", location_id: "", outbound_qty: "" };
 
@@ -15,6 +16,9 @@ function OutboundPage() {
   const [forecastError, setForecastError] = useState(null);
   const [basisOpen, setBasisOpen] = useState(false);
   const [message, setMessage] = useState(null);
+  const [lookupMode, setLookupMode] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedLocation, setSelectedLocation] = useState(null);
 
   const loadOutbounds = async () => {
     const data = await getOutbounds();
@@ -58,7 +62,34 @@ function OutboundPage() {
   }, []);
 
   const handleChange = (event) => {
-    setForm((current) => ({ ...current, [event.target.name]: event.target.value }));
+    const { name, value } = event.target;
+    setForm((current) => (
+      name === "product_id"
+        ? { ...current, product_id: value, location_id: "" }
+        : { ...current, [name]: value }
+    ));
+    if (name === "product_id") {
+      setSelectedProduct(null);
+      setSelectedLocation(null);
+    }
+    if (name === "location_id") setSelectedLocation(null);
+  };
+
+  const handleApplyProduct = (product) => {
+    setForm((current) => ({
+      ...current,
+      product_id: String(product.product_id),
+      location_id: "",
+    }));
+    setSelectedProduct(product);
+    setSelectedLocation(null);
+    setLookupMode(null);
+  };
+
+  const handleApplyLocation = (location) => {
+    setForm((current) => ({ ...current, location_id: String(location.location_id) }));
+    setSelectedLocation(location);
+    setLookupMode(null);
   };
 
   const handleSubmit = async (event) => {
@@ -73,6 +104,8 @@ function OutboundPage() {
         outbound_qty: Number(form.outbound_qty),
       });
       setForm(emptyForm);
+      setSelectedProduct(null);
+      setSelectedLocation(null);
       await loadOutbounds();
       setMessage({ type: "success", text: "출고가 정상적으로 처리되었습니다." });
     } catch (error) {
@@ -100,8 +133,25 @@ function OutboundPage() {
           </div>
 
           <form className="operation-form" onSubmit={handleSubmit}>
-            <label className="field"><span>상품 ID</span><input min="1" name="product_id" placeholder="예: 1024" required type="number" value={form.product_id} onChange={handleChange} /></label>
-            <label className="field"><span>로케이션 ID</span><input min="1" name="location_id" placeholder="예: 28" required type="number" value={form.location_id} onChange={handleChange} /></label>
+            <LookupField
+              caption={selectedProduct?.product_name}
+              label="상품 ID"
+              name="product_id"
+              placeholder="검색 버튼으로 상품 선택"
+              value={form.product_id}
+              onChange={handleChange}
+              onLookup={() => setLookupMode("product")}
+            />
+            <LookupField
+              caption={selectedLocation ? `${selectedLocation.location_name} · ${selectedLocation.zone} ZONE` : null}
+              label="로케이션 ID"
+              lookupDisabled={!form.product_id}
+              name="location_id"
+              placeholder="상품 선택 후 로케이션 검색"
+              value={form.location_id}
+              onChange={handleChange}
+              onLookup={() => setLookupMode("location")}
+            />
             <label className="field"><span>출고 수량</span><div className="input-with-unit"><input min="1" name="outbound_qty" placeholder="0" required type="number" value={form.outbound_qty} onChange={handleChange} /><span>EA</span></div></label>
 
             {message && <div className={`form-message ${message.type}`} role="status"><Icon name={message.type === "success" ? "check" : "alert"} size={18} />{message.text}</div>}
@@ -149,6 +199,15 @@ function OutboundPage() {
 
       {basisOpen && forecast && (
         <ForecastBasisModal forecast={forecast} onClose={() => setBasisOpen(false)} />
+      )}
+
+      {lookupMode && (
+        <WarehouseLookupModal
+          mode={lookupMode}
+          productId={form.product_id}
+          onApply={lookupMode === "product" ? handleApplyProduct : handleApplyLocation}
+          onClose={() => setLookupMode(null)}
+        />
       )}
     </section>
   );

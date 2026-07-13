@@ -10,3 +10,11 @@ router = APIRouter(prefix="/inventories", tags=["Inventory"], dependencies=[Depe
 @router.get("")
 async def get_inventories(product_id:int=Query(None), location_id:int=Query(None), db:AsyncSession=Depends(get_db)):
     return await InventoryService.get_inventorys(db, product_id, location_id)
+
+
+@router.get("/location-options")
+async def get_location_options(
+    product_id: int = Query(..., ge=1),
+    db: AsyncSession = Depends(get_db),
+):
+    return await InventoryService.get_location_options(db, product_id)

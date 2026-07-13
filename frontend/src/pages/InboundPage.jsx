@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import { createInbound, getInboundForecast, getInboundLocationRecommendation, getInbounds } from "../api/inbound";
 import Icon from "../components/Icon";
+import WarehouseLookupModal, { LookupField } from "../components/WarehouseLookupModal";
 
 const emptyForm = { product_id: "", location_id: "", inbound_qty: "" };
 
@@ -17,6 +18,9 @@ function InboundPage() {
   const [recommendationLoading, setRecommendationLoading] = useState(false);
   const [recommendationError, setRecommendationError] = useState(null);
   const [message, setMessage] = useState(null);
+  const [lookupMode, setLookupMode] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedLocation, setSelectedLocation] = useState(null);
 
   const loadInbounds = async () => {
     const data = await getInbounds();
@@ -43,15 +47,43 @@ function InboundPage() {
 
   const handleChange = (event) => {
     const { name, value } = event.target;
-    setForm((current) => ({ ...current, [name]: value }));
+    setForm((current) => (
+      name === "product_id"
+        ? { ...current, product_id: value, location_id: "" }
+        : { ...current, [name]: value }
+    ));
     if (name === "product_id") {
+      setSelectedProduct(null);
+      setSelectedLocation(null);
       setForecast(null);
       setForecastError(null);
     }
+    if (name === "location_id") setSelectedLocation(null);
     if (name === "product_id" || name === "inbound_qty") {
       setRecommendation(null);
       setRecommendationError(null);
     }
+  };
+
+  const handleApplyProduct = (product) => {
+    setForm((current) => ({
+      ...current,
+      product_id: String(product.product_id),
+      location_id: "",
+    }));
+    setSelectedProduct(product);
+    setSelectedLocation(null);
+    setForecast(null);
+    setForecastError(null);
+    setRecommendation(null);
+    setRecommendationError(null);
+    setLookupMode(null);
+  };
+
+  const handleApplyLocation = (location) => {
+    setForm((current) => ({ ...current, location_id: String(location.location_id) }));
+    setSelectedLocation(location);
+    setLookupMode(null);
   };
 
   const handleForecastInbound = async () => {
@@ -114,6 +146,8 @@ function InboundPage() {
         inbound_qty: Number(form.inbound_qty),
       });
       setForm(emptyForm);
+      setSelectedProduct(null);
+      setSelectedLocation(null);
       setForecast(null);
       setRecommendation(null);
       await loadInbounds();
@@ -143,8 +177,25 @@ function InboundPage() {
           </div>
 
           <form className="operation-form" onSubmit={handleSubmit}>
-            <label className="field"><span>상품 ID</span><input min="1" name="product_id" placeholder="예: 1024" required type="number" value={form.product_id} onChange={handleChange} /></label>
-            <label className="field"><span>로케이션 ID</span><input min="1" name="location_id" placeholder="예: 28" required type="number" value={form.location_id} onChange={handleChange} /></label>
+            <LookupField
+              caption={selectedProduct?.product_name}
+              label="상품 ID"
+              name="product_id"
+              placeholder="검색 버튼으로 상품 선택"
+              value={form.product_id}
+              onChange={handleChange}
+              onLookup={() => setLookupMode("product")}
+            />
+            <LookupField
+              caption={selectedLocation ? `${selectedLocation.location_name} · ${selectedLocation.zone} ZONE` : null}
+              label="로케이션 ID"
+              lookupDisabled={!form.product_id}
+              name="location_id"
+              placeholder="상품 선택 후 로케이션 검색"
+              value={form.location_id}
+              onChange={handleChange}
+              onLookup={() => setLookupMode("location")}
+            />
             <label className="field"><span>입고 수량</span><div className="input-with-unit"><input min="1" name="inbound_qty" placeholder="0" required type="number" value={form.inbound_qty} onChange={handleChange} /><span>EA</span></div></label>
 
             <div className="ai-control">
@@ -215,6 +266,15 @@ function InboundPage() {
       </div>
 
       <OperationTable loading={loading} rows={inbounds} type="inbound" />
+
+      {lookupMode && (
+        <WarehouseLookupModal
+          mode={lookupMode}
+          productId={form.product_id}
+          onApply={lookupMode === "product" ? handleApplyProduct : handleApplyLocation}
+          onClose={() => setLookupMode(null)}
+        />
+      )}
     </section>
   );
 }
