@@ -19,6 +19,18 @@ services:
         value: 900
       - key: REFRESH_TOKEN_EXPIRE
         value: 604800
+      - key: AI_EMBEDDED
+        value: "true"
+      - key: OMP_NUM_THREADS
+        value: "1"
+      - key: MKL_NUM_THREADS
+        value: "1"
+      - key: OPENBLAS_NUM_THREADS
+        value: "1"
+      - key: NUMEXPR_NUM_THREADS
+        value: "1"
+      - key: MALLOC_ARENA_MAX
+        value: "2"
 
 databases:
   - name: wms-db

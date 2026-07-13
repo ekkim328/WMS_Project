@@ -100,6 +100,14 @@ class InboundLocationRecommendationService:
 
     @staticmethod
     def _request_recommendation(payload):
+        if os.getenv("AI_EMBEDDED", os.getenv("RENDER", "")).lower() in {
+            "1", "true", "yes"
+        }:
+            from ai_forecast_server import InboundLocationRequest, recommend_location
+
+            request = InboundLocationRequest.model_validate(payload)
+            return recommend_location(request)
+
         ai_url = os.getenv(
             "AI_INBOUND_LOCATION_URL",
             "http://127.0.0.1:8090/recommend/inbound-location",

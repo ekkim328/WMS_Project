@@ -74,6 +74,10 @@ function App() {
               <span>{item.label}</span>
             </NavLink>
           ))}
+          <button className="nav-item nav-logout" type="button" onClick={handleLogout}>
+            <Icon name="logout" />
+            <span>로그아웃</span>
+          </button>
         </nav>
 
         <div className="sidebar-footer">
@@ -84,10 +88,6 @@ function App() {
               <span>API 연결 준비됨</span>
             </div>
           </div>
-          <button className="logout-button" type="button" onClick={handleLogout}>
-            <Icon name="logout" />
-            로그아웃
-          </button>
         </div>
       </aside>
 

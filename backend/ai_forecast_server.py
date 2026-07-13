@@ -73,6 +73,62 @@ class JsonStandardScaler:
         return (values * self.scale_) + self.mean_
 
 
+class NumpyLSTMRegressor:
+    def __init__(self, model_path: Path):
+        import numpy as np
+
+        with np.load(model_path) as archive:
+            self.weights = {
+                key: archive[key].astype(np.float32, copy=False)
+                for key in archive.files
+            }
+
+        self.layer_count = sum(
+            key.startswith("lstm.weight_ih_l") for key in self.weights
+        )
+
+    @staticmethod
+    def _sigmoid(values):
+        import numpy as np
+
+        return 1.0 / (1.0 + np.exp(-np.clip(values, -60.0, 60.0)))
+
+    def predict(self, sequence):
+        import numpy as np
+
+        layer_input = np.asarray(sequence, dtype=np.float32)
+
+        for layer_index in range(self.layer_count):
+            weight_ih = self.weights[f"lstm.weight_ih_l{layer_index}"]
+            weight_hh = self.weights[f"lstm.weight_hh_l{layer_index}"]
+            bias = (
+                self.weights[f"lstm.bias_ih_l{layer_index}"]
+                + self.weights[f"lstm.bias_hh_l{layer_index}"]
+            )
+            hidden_size = weight_hh.shape[1]
+            hidden = np.zeros(hidden_size, dtype=np.float32)
+            cell = np.zeros(hidden_size, dtype=np.float32)
+            outputs = []
+
+            for step in layer_input:
+                gates = (weight_ih @ step) + (weight_hh @ hidden) + bias
+                input_gate, forget_gate, candidate, output_gate = np.split(gates, 4)
+                input_gate = self._sigmoid(input_gate)
+                forget_gate = self._sigmoid(forget_gate)
+                candidate = np.tanh(candidate)
+                output_gate = self._sigmoid(output_gate)
+                cell = (forget_gate * cell) + (input_gate * candidate)
+                hidden = output_gate * np.tanh(cell)
+                outputs.append(hidden)
+
+            layer_input = np.stack(outputs)
+
+        dense = self.weights["fc.0.weight"] @ layer_input[-1]
+        dense = np.maximum(dense + self.weights["fc.0.bias"], 0)
+        output = (self.weights["fc.2.weight"] @ dense) + self.weights["fc.2.bias"]
+        return output.reshape(1, 1)
+
+
 class InboundForecastModel:
     _bundle = None
 
@@ -98,7 +154,6 @@ class InboundForecastModel:
 
         try:
             import numpy as np
-            import torch
         except ImportError as exc:
             raise HTTPException(
                 status_code=503,
@@ -108,10 +163,7 @@ class InboundForecastModel:
         features = bundle["features"]
         seq = product_frame[features].tail(bundle["window_size"]).to_numpy(dtype=np.float32)
         x_scaled = bundle["scaler_X"].transform(seq)
-        x_tensor = torch.tensor(x_scaled, dtype=torch.float32).unsqueeze(0).to(bundle["device"])
-
-        with torch.no_grad():
-            pred_scaled = bundle["model"](x_tensor).cpu().numpy()
+        pred_scaled = bundle["model"].predict(x_scaled)
 
         pred_qty = float(bundle["scaler_y"].inverse_transform(pred_scaled)[0][0])
         last_row = product_frame.iloc[-1]
@@ -160,8 +212,6 @@ class InboundForecastModel:
         try:
             import json
             import pandas as pd
-            import torch
-            import torch.nn as nn
         except ImportError as exc:
             raise HTTPException(
                 status_code=503,
@@ -171,7 +221,7 @@ class InboundForecastModel:
         backend_root = Path(__file__).resolve().parent
         model_dir = backend_root / "ml" / "inbound_forecast"
         metadata_path = model_dir / "metadata.json"
-        model_path = model_dir / "model.pt"
+        model_path = model_dir / "model.npz"
         scaler_x_path = model_dir / "scaler_X.json"
         scaler_y_path = model_dir / "scaler_y.json"
         training_frame_path = model_dir / "training_frame.csv"
@@ -194,39 +244,7 @@ class InboundForecastModel:
         with scaler_y_path.open("r", encoding="utf-8") as file:
             scaler_y_payload = json.load(file)
 
-        state_dict = torch.load(model_path, map_location="cpu")
-        hidden_dim = int(state_dict["lstm.weight_hh_l0"].shape[1])
-        num_layers = 1 + max(
-            int(key.rsplit("_l", 1)[1])
-            for key in state_dict
-            if key.startswith("lstm.weight_ih_l")
-        )
-        fc_hidden_dim = int(state_dict["fc.0.weight"].shape[0])
-
-        class InboundLSTM(nn.Module):
-            def __init__(self, input_dim):
-                super().__init__()
-                self.lstm = nn.LSTM(
-                    input_dim,
-                    hidden_dim,
-                    num_layers=num_layers,
-                    batch_first=True,
-                    dropout=0.0,
-                )
-                self.fc = nn.Sequential(
-                    nn.Linear(hidden_dim, fc_hidden_dim),
-                    nn.ReLU(),
-                    nn.Linear(fc_hidden_dim, 1),
-                )
-
-            def forward(self, x):
-                out, _ = self.lstm(x)
-                return self.fc(out[:, -1, :])
-
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        model = InboundLSTM(metadata["input_dim"]).to(device)
-        model.load_state_dict(state_dict)
-        model.eval()
+        model = NumpyLSTMRegressor(model_path)
 
         training_frame = pd.read_csv(training_frame_path)
         if "date_ts" in training_frame.columns:
@@ -248,7 +266,7 @@ class InboundForecastModel:
             "window_size": int(metadata["window_size"]),
             "target": metadata.get("target", "next_day_inbound_qty"),
             "metrics": metadata.get("metrics", {}),
-            "device": device,
+            "device": "cpu",
             "model": model,
             "scaler_X": JsonStandardScaler(scaler_x_payload),
             "scaler_y": JsonStandardScaler(scaler_y_payload),
@@ -275,7 +293,6 @@ class OutboundForecastModel:
 
         try:
             import numpy as np
-            import torch
         except ImportError as exc:
             raise HTTPException(
                 status_code=503,
@@ -283,10 +300,7 @@ class OutboundForecastModel:
             ) from exc
 
         x_scaled = bundle["scaler_X"].transform(prediction_frame[bundle["features"]])
-        x_tensor = torch.tensor(x_scaled, dtype=torch.float32).unsqueeze(0).to(bundle["device"])
-
-        with torch.no_grad():
-            pred_scaled = bundle["model"](x_tensor).cpu().numpy()
+        pred_scaled = bundle["model"].predict(x_scaled)
 
         pred_qty = float(bundle["scaler_y"].inverse_transform(pred_scaled)[0][0])
         last_row = df.iloc[-1]
@@ -336,9 +350,6 @@ class OutboundForecastModel:
 
         try:
             import json
-            import joblib
-            import torch
-            import torch.nn as nn
         except ImportError as exc:
             raise HTTPException(
                 status_code=503,
@@ -348,9 +359,9 @@ class OutboundForecastModel:
         backend_root = Path(__file__).resolve().parent
         model_dir = backend_root / "ml" / "outbound_forecast"
         metadata_path = model_dir / "metadata.json"
-        model_path = model_dir / "model.pt"
-        scaler_x_path = model_dir / "scaler_X.pkl"
-        scaler_y_path = model_dir / "scaler_y.pkl"
+        model_path = model_dir / "model.npz"
+        scaler_x_path = model_dir / "scaler_X.json"
+        scaler_y_path = model_dir / "scaler_y.json"
 
         missing = [
             str(path)
@@ -365,39 +376,18 @@ class OutboundForecastModel:
 
         with metadata_path.open("r", encoding="utf-8") as file:
             metadata = json.load(file)
-
-        class OutboundLSTM(nn.Module):
-            def __init__(self, input_dim):
-                super().__init__()
-                self.lstm = nn.LSTM(
-                    input_dim,
-                    64,
-                    num_layers=2,
-                    batch_first=True,
-                    dropout=0.2,
-                )
-                self.fc = nn.Sequential(
-                    nn.Linear(64, 32),
-                    nn.ReLU(),
-                    nn.Linear(32, 1),
-                )
-
-            def forward(self, x):
-                out, _ = self.lstm(x)
-                return self.fc(out[:, -1, :])
-
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        model = OutboundLSTM(metadata["input_dim"]).to(device)
-        model.load_state_dict(torch.load(model_path, map_location=device))
-        model.eval()
+        with scaler_x_path.open("r", encoding="utf-8") as file:
+            scaler_x_payload = json.load(file)
+        with scaler_y_path.open("r", encoding="utf-8") as file:
+            scaler_y_payload = json.load(file)
 
         cls._bundle = {
             "features": metadata["features"],
             "window_size": int(metadata["window_size"]),
-            "device": device,
-            "model": model,
-            "scaler_X": joblib.load(scaler_x_path),
-            "scaler_y": joblib.load(scaler_y_path),
+            "device": "cpu",
+            "model": NumpyLSTMRegressor(model_path),
+            "scaler_X": JsonStandardScaler(scaler_x_payload),
+            "scaler_y": JsonStandardScaler(scaler_y_payload),
         }
         return cls._bundle
 
@@ -525,8 +515,7 @@ async def forecast_inbound(product_id: int):
     return InboundForecastModel.forecast_product(product_id)
 
 
-@app.post("/recommend/inbound-location", response_model=LocationRecommendation)
-async def recommend_inbound_location(request: InboundLocationRequest):
+def recommend_location(request: InboundLocationRequest):
     if not request.candidates:
         raise HTTPException(status_code=422, detail="No candidate locations were supplied.")
 
@@ -554,3 +543,8 @@ async def recommend_inbound_location(request: InboundLocationRequest):
         "confidence": round(confidence, 2),
         "alternatives": scored[1:4],
     }
+
+
+@app.post("/recommend/inbound-location", response_model=LocationRecommendation)
+async def recommend_inbound_location(request: InboundLocationRequest):
+    return recommend_location(request)

@@ -15,7 +15,9 @@ ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
 COPY backend/requirements.txt ./backend/requirements.txt
+COPY backend/ai_requirements.txt ./backend/ai_requirements.txt
 RUN pip install --no-cache-dir -r backend/requirements.txt
+RUN pip install --no-cache-dir -r backend/ai_requirements.txt
 
 COPY backend ./backend
 COPY --from=frontend-build /app/frontend/dist ./frontend/dist

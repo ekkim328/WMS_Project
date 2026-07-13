@@ -14,6 +14,13 @@ class OutboundForecastService:
 
     @staticmethod
     def _request_forecast():
+        if os.getenv("AI_EMBEDDED", os.getenv("RENDER", "")).lower() in {
+            "1", "true", "yes"
+        }:
+            from ai_forecast_server import OutboundForecastModel
+
+            return OutboundForecastModel.forecast_today()
+
         ai_url = os.getenv(
             "AI_OUTBOUND_FORECAST_URL",
             "http://127.0.0.1:8090/forecast/outbound/today",

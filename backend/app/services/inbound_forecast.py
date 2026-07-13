@@ -15,6 +15,13 @@ class InboundForecastService:
 
     @staticmethod
     def _request_forecast(product_id: int):
+        if os.getenv("AI_EMBEDDED", os.getenv("RENDER", "")).lower() in {
+            "1", "true", "yes"
+        }:
+            from ai_forecast_server import InboundForecastModel
+
+            return InboundForecastModel.forecast_product(product_id)
+
         base_url = os.getenv(
             "AI_INBOUND_FORECAST_URL",
             "http://127.0.0.1:8090/forecast/inbound",
