@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from fastapi import HTTPException
 
-from app.db.models import Outbound, Inventory
+from app.db.models import Outbound, Inventory, Product
 from app.db.scheme.outbounds import OutboundCreate
 from app.db.crud import OutboundCrud, InventoryCrud
 from app.services.history import HistoryService
@@ -12,7 +12,10 @@ from app.services.shortage import ShortageService
 class OutboundService:
     @staticmethod
     async def get_outbounds(db: AsyncSession, product_id, location_id):
-        query = select(Outbound)
+        query = select(Outbound, Product.product_name).join(
+            Product,
+            Outbound.product_id == Product.product_id,
+        )
 
         if product_id:
             query = query.filter(Outbound.product_id == product_id)
@@ -23,7 +26,17 @@ class OutboundService:
         query = query.order_by(Outbound.outbound_id.desc())
 
         result = await db.execute(query)
-        return result.scalars().all()
+        return [
+            {
+                "outbound_id": outbound.outbound_id,
+                "product_id": outbound.product_id,
+                "product_name": product_name,
+                "location_id": outbound.location_id,
+                "outbound_qty": outbound.outbound_qty,
+                "outbound_date": outbound.outbound_date,
+            }
+            for outbound, product_name in result.all()
+        ]
 
     @staticmethod
     async def create(db: AsyncSession, outbound: OutboundCreate):

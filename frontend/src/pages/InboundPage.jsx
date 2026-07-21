@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 
 import { createInbound, getInboundForecast, getInboundLocationRecommendation, getInbounds } from "../api/inbound";
 import Icon from "../components/Icon";
+import Pagination, { PAGE_SIZE } from "../components/Pagination";
 import WarehouseLookupModal, { LookupField } from "../components/WarehouseLookupModal";
 
 const emptyForm = { product_id: "", location_id: "", inbound_qty: "" };
 
 function InboundPage() {
   const [inbounds, setInbounds] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -25,6 +27,7 @@ function InboundPage() {
   const loadInbounds = async () => {
     const data = await getInbounds();
     setInbounds(data);
+    setCurrentPage(1);
   };
 
   useEffect(() => {
@@ -161,6 +164,10 @@ function InboundPage() {
   };
 
   const totalInbound = inbounds.reduce((sum, item) => sum + item.inbound_qty, 0);
+  const inboundTotalPages = Math.max(1, Math.ceil(inbounds.length / PAGE_SIZE));
+  const activeInboundPage = Math.min(currentPage, inboundTotalPages);
+  const inboundPageStart = (activeInboundPage - 1) * PAGE_SIZE;
+  const paginatedInbounds = inbounds.slice(inboundPageStart, inboundPageStart + PAGE_SIZE);
 
   return (
     <section className="page-stack">
@@ -265,7 +272,14 @@ function InboundPage() {
         </div>
       </div>
 
-      <OperationTable loading={loading} rows={inbounds} type="inbound" />
+      <OperationTable
+        currentPage={activeInboundPage}
+        loading={loading}
+        onPageChange={setCurrentPage}
+        rows={paginatedInbounds}
+        totalRows={inbounds.length}
+        type="inbound"
+      />
 
       {lookupMode && (
         <WarehouseLookupModal
@@ -279,14 +293,17 @@ function InboundPage() {
   );
 }
 
-function OperationTable({ loading, rows, type }) {
+function OperationTable({ currentPage, loading, onPageChange, rows, totalRows, type }) {
   return (
     <article className="data-card">
-      <div className="card-toolbar"><div><h3>최근 입고 내역</h3><p>최신 등록 순으로 표시됩니다.</p></div><span className="record-count">{rows.length.toLocaleString()} RECORDS</span></div>
-      {loading ? <div className="state-message"><Icon name="package" />내역을 불러오는 중입니다.</div> : rows.length === 0 ? <div className="state-message"><Icon name="package" />등록된 입고 내역이 없습니다.</div> : (
-        <div className="table-wrap"><table><thead><tr><th>입고 번호</th><th>상품 ID</th><th>로케이션</th><th>입고 수량</th><th>처리 상태</th></tr></thead><tbody>
-          {rows.map((item) => <tr key={item.inbound_id}><td className="mono-cell">IN-{String(item.inbound_id).padStart(5, "0")}</td><td><span className="item-id">PRD-{String(item.product_id).padStart(4, "0")}</span></td><td><span className="location-cell"><Icon name="location" size={16} /> LOC-{item.location_id}</span></td><td><strong className="quantity">+{item.inbound_qty.toLocaleString()}</strong><span className="unit"> EA</span></td><td><span className={`status-pill ${type === "inbound" ? "success" : ""}`}>입고 완료</span></td></tr>)}
-        </tbody></table></div>
+      <div className="card-toolbar"><div><h3>최근 입고 내역</h3><p>최신 등록 순으로 표시됩니다.</p></div><span className="record-count">{totalRows.toLocaleString()} RECORDS</span></div>
+      {loading ? <div className="state-message"><Icon name="package" />내역을 불러오는 중입니다.</div> : totalRows === 0 ? <div className="state-message"><Icon name="package" />등록된 입고 내역이 없습니다.</div> : (
+        <>
+          <div className="table-wrap"><table><thead><tr><th>입고 번호</th><th>상품명</th><th>로케이션</th><th>입고 수량</th><th>처리 상태</th></tr></thead><tbody>
+            {rows.map((item) => <tr key={item.inbound_id}><td className="mono-cell">IN-{String(item.inbound_id).padStart(5, "0")}</td><td><span className="item-id">{item.product_name}</span></td><td><span className="location-cell"><Icon name="location" size={16} /> LOC-{item.location_id}</span></td><td><strong className="quantity">+{item.inbound_qty.toLocaleString()}</strong><span className="unit"> EA</span></td><td><span className={`status-pill ${type === "inbound" ? "success" : ""}`}>입고 완료</span></td></tr>)}
+          </tbody></table></div>
+          <Pagination ariaLabel="입고 내역 페이지" currentPage={currentPage} totalItems={totalRows} onPageChange={onPageChange} />
+        </>
       )}
     </article>
   );

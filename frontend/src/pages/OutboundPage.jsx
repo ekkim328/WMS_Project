@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 
 import { createOutbound, getOutboundForecast, getOutbounds } from "../api/outbound";
 import Icon from "../components/Icon";
+import Pagination, { PAGE_SIZE } from "../components/Pagination";
 import WarehouseLookupModal, { LookupField } from "../components/WarehouseLookupModal";
 
 const emptyForm = { product_id: "", location_id: "", outbound_qty: "" };
 
 function OutboundPage() {
   const [outbounds, setOutbounds] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -23,6 +25,7 @@ function OutboundPage() {
   const loadOutbounds = async () => {
     const data = await getOutbounds();
     setOutbounds(data);
+    setCurrentPage(1);
   };
 
   const loadForecast = async () => {
@@ -117,6 +120,10 @@ function OutboundPage() {
   };
 
   const totalOutbound = outbounds.reduce((sum, item) => sum + item.outbound_qty, 0);
+  const outboundTotalPages = Math.max(1, Math.ceil(outbounds.length / PAGE_SIZE));
+  const activeOutboundPage = Math.min(currentPage, outboundTotalPages);
+  const outboundPageStart = (activeOutboundPage - 1) * PAGE_SIZE;
+  const paginatedOutbounds = outbounds.slice(outboundPageStart, outboundPageStart + PAGE_SIZE);
 
   return (
     <section className="page-stack">
@@ -200,9 +207,12 @@ function OutboundPage() {
       <article className="data-card">
         <div className="card-toolbar"><div><h3>최근 출고 내역</h3><p>최신 처리 순으로 표시됩니다.</p></div><span className="record-count">{outbounds.length.toLocaleString()} RECORDS</span></div>
         {loading ? <div className="state-message"><Icon name="package" />내역을 불러오는 중입니다.</div> : outbounds.length === 0 ? <div className="state-message"><Icon name="package" />등록된 출고 내역이 없습니다.</div> : (
-          <div className="table-wrap"><table><thead><tr><th>출고 번호</th><th>상품 ID</th><th>로케이션</th><th>출고 수량</th><th>처리 상태</th></tr></thead><tbody>
-            {outbounds.map((item) => <tr key={item.outbound_id}><td className="mono-cell">OUT-{String(item.outbound_id).padStart(5, "0")}</td><td><span className="item-id">PRD-{String(item.product_id).padStart(4, "0")}</span></td><td><span className="location-cell"><Icon name="location" size={16} /> LOC-{item.location_id}</span></td><td><strong className="quantity outbound-quantity">-{item.outbound_qty.toLocaleString()}</strong><span className="unit"> EA</span></td><td><span className="status-pill success">출고 완료</span></td></tr>)}
-          </tbody></table></div>
+          <>
+            <div className="table-wrap"><table><thead><tr><th>출고 번호</th><th>상품명</th><th>로케이션</th><th>출고 수량</th><th>처리 상태</th></tr></thead><tbody>
+              {paginatedOutbounds.map((item) => <tr key={item.outbound_id}><td className="mono-cell">OUT-{String(item.outbound_id).padStart(5, "0")}</td><td><span className="item-id">{item.product_name}</span></td><td><span className="location-cell"><Icon name="location" size={16} /> LOC-{item.location_id}</span></td><td><strong className="quantity outbound-quantity">-{item.outbound_qty.toLocaleString()}</strong><span className="unit"> EA</span></td><td><span className="status-pill success">출고 완료</span></td></tr>)}
+            </tbody></table></div>
+            <Pagination ariaLabel="출고 내역 페이지" currentPage={activeOutboundPage} totalItems={outbounds.length} onPageChange={setCurrentPage} />
+          </>
         )}
       </article>
 

@@ -9,6 +9,7 @@ from fastapi.concurrency import asynccontextmanager
 from dotenv import load_dotenv
 from app.routers import user, inbound, outbound, inventory, product, location, history
 from app.services.demo_seed import seed_demo_data_if_empty
+from app.services.local_ai_runtime import start_local_ai_server, stop_local_ai_server
 load_dotenv(dotenv_path=".env")
 
 from app.routers.admin_seed import router as admin_seed_router
@@ -20,8 +21,12 @@ async def lifespan(app:FastAPI):
     async with async_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     await seed_demo_data_if_empty()
-    yield
-    await async_engine.dispose()
+    ai_process = await start_local_ai_server()
+    try:
+        yield
+    finally:
+        await stop_local_ai_server(ai_process)
+        await async_engine.dispose()
 
 app = FastAPI(lifespan=lifespan)
 

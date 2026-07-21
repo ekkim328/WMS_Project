@@ -1,7 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from app.db.models import Inbound
-from app.db.models import Inventory
+from app.db.models import Inbound, Inventory, Product
 from app.db.scheme.inbounds import InboundCreate
 from app.db.crud import InboundCrud
 from app.services.history import HistoryService
@@ -11,14 +10,27 @@ class InboundService:
     
     @staticmethod
     async def get_inbounds(db:AsyncSession, product_id, location_id):
-        query = select(Inbound)
+        query = select(Inbound, Product.product_name).join(
+            Product,
+            Inbound.product_id == Product.product_id,
+        )
         if product_id:
             query = query.filter(Inbound.product_id==product_id)
         if location_id:
             query = query.filter(Inbound.location_id==location_id)
         query = query.order_by(Inbound.inbound_id.desc())
         result = await db.execute(query)
-        return result.scalars().all()
+        return [
+            {
+                "inbound_id": inbound.inbound_id,
+                "product_id": inbound.product_id,
+                "product_name": product_name,
+                "location_id": inbound.location_id,
+                "inbound_qty": inbound.inbound_qty,
+                "inbound_date": inbound.inbound_date,
+            }
+            for inbound, product_name in result.all()
+        ]
 
 
 
