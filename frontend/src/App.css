@@ -120,6 +120,13 @@ tbody tr:hover { background: #fafcfc; }
 .operation-summary > strong { margin-top: 20px; font-size: 33px; line-height: 1; letter-spacing: -.04em; }
 .operation-summary strong small { font-size: 12px; font-weight: 500; opacity: .7; }
 .operation-summary p { max-width: 210px; margin: 18px 0 0; font-size: 10px; line-height: 1.6; opacity: .65; }
+.summary-label-row { display: flex; align-items: center; gap: 7px; }
+.summary-label-row > span:first-child { font-size: 10px; font-weight: 600; opacity: .75; }
+.ai-help { position: relative; display: inline-flex; }
+.ai-help-button { width: 18px; height: 18px; padding: 0; color: white; border: 1px solid rgba(255,255,255,.32); border-radius: 50%; background: rgba(255,255,255,.12); font-size: 10px; font-weight: 800; line-height: 1; cursor: help; }
+.ai-help-button:hover, .ai-help-button:focus-visible { background: rgba(255,255,255,.24); outline: none; }
+.ai-help-popover { position: absolute; top: calc(100% + 8px); left: 0; z-index: 3; width: 230px; padding: 10px 12px; visibility: hidden; color: #5e6878; border: 1px solid #e2e7ec; border-radius: 8px; background: white; box-shadow: 0 10px 28px rgba(30,41,59,.18); font-size: 10px; font-weight: 500; line-height: 1.55; opacity: 0; transform: translateY(-4px); transition: .15s ease; }
+.ai-help:hover .ai-help-popover, .ai-help:focus-within .ai-help-popover { visibility: visible; opacity: 1; transform: translateY(0); }
 .summary-graphic { position: absolute; right: 24px; bottom: 22px; width: 76px; height: 76px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.17); border-radius: 50%; color: rgba(255,255,255,.8); background: rgba(255,255,255,.08); }
 .record-count { color: #95a0af; }
 .home-metric-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
@@ -153,7 +160,6 @@ tbody tr:hover { background: #fafcfc; }
 .ai-panel span, .ai-panel small { display: block; }
 .ai-panel span { font-size: 9px; font-weight: 700; letter-spacing: .12em; opacity: .72; }
 .ai-panel .ai-label { font-size: 10px; letter-spacing: 0; opacity: .9; }
-.ai-panel .ai-description { max-width: 220px; margin: 6px 0 0; font-size: 9px; line-height: 1.5; opacity: .72; }
 .ai-panel strong { display: block; margin-top: 7px; color: white; font-size: 21px; line-height: 1; letter-spacing: 0; }
 .ai-panel strong small { display: inline; margin-left: 4px; font-size: 10px; font-weight: 500; opacity: .68; }
 .ai-panel > div > small { max-width: 160px; margin-top: 7px; font-size: 9px; line-height: 1.35; opacity: .68; overflow-wrap: anywhere; }

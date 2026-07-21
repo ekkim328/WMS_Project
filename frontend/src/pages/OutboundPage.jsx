@@ -163,12 +163,20 @@ function OutboundPage() {
         </article>
 
         <div className="operation-summary outbound-summary">
-          <span>누적 출고 수량</span><strong>{totalOutbound.toLocaleString()}<small> EA</small></strong>
+          <div className="summary-label-row">
+            <span>누적 출고 수량</span>
+            <span className="ai-help">
+              <button aria-describedby="outbound-ai-description" aria-label="AI 출고량 예측 설명" className="ai-help-button" type="button">i</button>
+              <span className="ai-help-popover" id="outbound-ai-description" role="tooltip">
+                AI가 과거 출고 패턴과 최근 흐름, 요일·휴일·행사 정보를 분석해 오늘의 전체 출고량을 예측합니다.
+              </span>
+            </span>
+          </div>
+          <strong>{totalOutbound.toLocaleString()}<small> EA</small></strong>
           <p>현재 조회된 출고 기록 {outbounds.length.toLocaleString()}건의 합계입니다.</p>
           <div className="ai-panel">
             <div className="ai-forecast-content">
               <span className="ai-label">AI 오늘 출고량 예측</span>
-              <p className="ai-description">과거 출고 패턴과 최근 흐름, 요일·휴일·행사 정보를 분석한 오늘의 예상 출고량입니다.</p>
               {forecast ? (
                 <strong>{forecast.predicted_qty.toLocaleString()}<small>EA</small></strong>
               ) : (
