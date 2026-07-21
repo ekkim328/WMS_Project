@@ -166,20 +166,21 @@ function OutboundPage() {
           <span>누적 출고 수량</span><strong>{totalOutbound.toLocaleString()}<small> EA</small></strong>
           <p>현재 조회된 출고 기록 {outbounds.length.toLocaleString()}건의 합계입니다.</p>
           <div className="ai-panel">
-            <div>
-              <span>TODAY FORECAST</span>
+            <div className="ai-forecast-content">
+              <span className="ai-label">AI 오늘 출고량 예측</span>
+              <p className="ai-description">과거 출고 패턴과 최근 흐름, 요일·휴일·행사 정보를 분석한 오늘의 예상 출고량입니다.</p>
               {forecast ? (
                 <strong>{forecast.predicted_qty.toLocaleString()}<small>EA</small></strong>
               ) : (
                 <strong>--<small>EA</small></strong>
               )}
-              <small>{forecast ? `${forecast.target_date} / ${forecast.device}` : forecastError ?? "Today outbound quantity"}</small>
+              <small>{forecast ? `예측일 ${forecast.target_date} · 데이터 기준 ${forecast.based_on_date}` : forecastError ?? "오늘 출고량을 예측하고 있습니다."}</small>
             </div>
             <div className="ai-actions">
-              <button disabled={forecastLoading} title="Refresh forecast" type="button" onClick={loadForecast}>
+              <button aria-label="AI 예측 새로고침" disabled={forecastLoading} title="AI 예측 새로고침" type="button" onClick={loadForecast}>
                 <Icon name="chart" size={15} />
               </button>
-              <button disabled={!forecast} title="예측근거" type="button" onClick={() => setBasisOpen(true)}>
+              <button aria-label="AI 예측 근거 보기" disabled={!forecast} title="AI 예측 근거 보기" type="button" onClick={() => setBasisOpen(true)}>
                 <Icon name="alert" size={15} />
               </button>
             </div>

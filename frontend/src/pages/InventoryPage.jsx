@@ -34,7 +34,7 @@ function InventoryPage() {
     if (!normalizedQuery) return inventories;
 
     return inventories.filter((item) =>
-      [item.inventory_id, item.product_id, item.location_id]
+      [item.inventory_id, item.product_name, item.location_id]
         .some((value) => String(value).toLowerCase().includes(normalizedQuery)),
     );
   }, [inventories, query]);
@@ -97,12 +97,12 @@ function InventoryPage() {
         ) : (
           <div className="table-wrap">
             <table>
-              <thead><tr><th>재고 ID</th><th>상품 ID</th><th>로케이션</th><th>현재 재고</th><th>상태</th></tr></thead>
+              <thead><tr><th>재고 ID</th><th>상품명</th><th>로케이션</th><th>현재 재고</th><th>상태</th></tr></thead>
               <tbody>
                 {filteredInventories.map((item) => (
                   <tr key={item.inventory_id}>
                     <td className="mono-cell">#{String(item.inventory_id).padStart(4, "0")}</td>
-                    <td><span className="item-id">PRD-{String(item.product_id).padStart(4, "0")}</span></td>
+                    <td><span className="item-id">{item.product_name}</span></td>
                     <td><span className="location-cell"><Icon name="location" size={16} /> LOC-{item.location_id}</span></td>
                     <td><strong className="quantity">{item.stock_qty.toLocaleString()}</strong><span className="unit"> EA</span></td>
                     <td><span className={`status-pill ${item.stock_qty <= 10 ? "warning" : "success"}`}>{item.stock_qty <= 10 ? "재고 부족" : "정상"}</span></td>

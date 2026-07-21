@@ -52,8 +52,8 @@ function SignupPage() {
       return;
     }
 
-    if (form.password.length < 8) {
-      setError("비밀번호는 8자 이상이어야 합니다.");
+    if (form.password.length < 4) {
+      setError("비밀번호는 4자 이상이어야 합니다.");
       return;
     }
 
@@ -132,9 +132,9 @@ function SignupPage() {
               <span>비밀번호</span>
               <input
                 autoComplete="new-password"
-                minLength={8}
+                minLength={4}
                 name="password"
-                placeholder="8자 이상 입력하세요"
+                placeholder="4자 이상 입력하세요"
                 required
                 type="password"
                 value={form.password}

@@ -2,19 +2,31 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import exists
 from sqlalchemy.future import select
 from fastapi import HTTPException
-from app.db.models import Inventory, Location
+from app.db.models import Inventory, Location, Product
 
 class InventoryService:
     @staticmethod
     async def get_inventorys(db:AsyncSession, product_id, location_id):
-        query = select(Inventory)
+        query = select(Inventory, Product.product_name).join(
+            Product,
+            Inventory.product_id == Product.product_id,
+        )
         if product_id:
             query = query.filter(Inventory.product_id==product_id)
         if location_id:
             query = query.filter(Inventory.location_id==location_id)
         query = query.order_by(Inventory.inventory_id.desc())
         result = await db.execute(query)
-        return result.scalars().all()
+        return [
+            {
+                "inventory_id": inventory.inventory_id,
+                "product_id": inventory.product_id,
+                "product_name": product_name,
+                "location_id": inventory.location_id,
+                "stock_qty": inventory.stock_qty,
+            }
+            for inventory, product_name in result.all()
+        ]
 
     @staticmethod
     async def get_location_options(db: AsyncSession, product_id: int):

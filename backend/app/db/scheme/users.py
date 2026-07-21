@@ -10,7 +10,7 @@ class UserBase(BaseModel):
     name: Annotated[str, Field(min_length=1, max_length=100)]
 
 class UserCreate(UserBase):
-    password: Annotated[str, Field(min_length=8, max_length=72)]
+    password: Annotated[str, Field(min_length=4, max_length=72)]
 
     @field_validator("password")
     @classmethod
@@ -28,7 +28,7 @@ class UserLogin(BaseModel):
 class UserUpdate(BaseModel):
     username: Annotated[str, Field(min_length=1, max_length=40)] | None = None
     name: Annotated[str, Field(min_length=1, max_length=100)] | None = None
-    password: Annotated[str, Field(max_length=72)] | None = None
+    password: Annotated[str, Field(min_length=4, max_length=72)] | None = None
 
 
 class UserInDB(UserBase):
