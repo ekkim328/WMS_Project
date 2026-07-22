@@ -32,15 +32,38 @@ function InventoryPage() {
     };
   }, []);
 
+  const productInventories = useMemo(() => {
+    const products = new Map();
+
+    inventories.forEach((item) => {
+      const productKey = item.product_id ?? item.product_name;
+      const product = products.get(productKey) ?? {
+        product_id: item.product_id,
+        product_name: item.product_name,
+        total_stock_qty: 0,
+        location_ids: new Set(),
+      };
+
+      product.total_stock_qty += Number(item.stock_qty) || 0;
+      product.location_ids.add(item.location_id);
+      products.set(productKey, product);
+    });
+
+    return Array.from(products.values(), (product) => ({
+      ...product,
+      location_ids: Array.from(product.location_ids),
+    }));
+  }, [inventories]);
+
   const filteredInventories = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    if (!normalizedQuery) return inventories;
+    if (!normalizedQuery) return productInventories;
 
-    return inventories.filter((item) =>
-      [item.inventory_id, item.product_name, item.location_id]
+    return productInventories.filter((item) =>
+      [item.product_name, ...item.location_ids]
         .some((value) => String(value).toLowerCase().includes(normalizedQuery)),
     );
-  }, [inventories, query]);
+  }, [productInventories, query]);
 
   const totalPages = Math.max(1, Math.ceil(filteredInventories.length / PAGE_SIZE));
   const activePage = Math.min(currentPage, totalPages);
@@ -70,8 +93,8 @@ function InventoryPage() {
       <div className="metric-grid">
         <article className="metric-card accent-blue">
           <div className="metric-icon"><Icon name="package" /></div>
-          <span>재고 항목</span><strong>{inventories.length.toLocaleString()}</strong>
-          <small>등록된 상품·위치 조합</small>
+          <span>재고 항목</span><strong>{productInventories.length.toLocaleString()}</strong>
+          <small>재고가 등록된 상품</small>
         </article>
         <article className="metric-card accent-green">
           <div className="metric-icon"><Icon name="chart" /></div>
@@ -98,12 +121,12 @@ function InventoryPage() {
 
       <article className="data-card">
         <div className="card-toolbar">
-          <div><h3>재고 목록</h3><p>총 {filteredInventories.length.toLocaleString()}건</p></div>
+          <div><h3>재고 목록</h3><p>총 {filteredInventories.length.toLocaleString()}개 상품</p></div>
           <label className="search-box">
             <Icon name="search" size={18} />
             <input
               aria-label="재고 검색"
-              placeholder="상품, 로케이션 ID 검색"
+              placeholder="상품명, 로케이션 ID 검색"
               value={query}
               onChange={handleQueryChange}
             />
@@ -118,15 +141,14 @@ function InventoryPage() {
           <>
             <div className="table-wrap">
               <table>
-                <thead><tr><th>재고 ID</th><th>상품명</th><th>로케이션</th><th>현재 재고</th><th>상태</th></tr></thead>
+                <thead><tr><th>상품명</th><th>사용 로케이션</th><th>총 재고</th><th>상태</th></tr></thead>
                 <tbody>
                   {paginatedInventories.map((item) => (
-                    <tr key={item.inventory_id}>
-                      <td className="mono-cell">#{String(item.inventory_id).padStart(4, "0")}</td>
+                    <tr key={item.product_id ?? item.product_name}>
                       <td><span className="item-id">{item.product_name}</span></td>
-                      <td><span className="location-cell"><Icon name="location" size={16} /> LOC-{item.location_id}</span></td>
-                      <td><strong className="quantity">{item.stock_qty.toLocaleString()}</strong><span className="unit"> EA</span></td>
-                      <td><span className={`status-pill ${item.stock_qty <= 10 ? "warning" : "success"}`}>{item.stock_qty <= 10 ? "재고 부족" : "정상"}</span></td>
+                      <td><span className="location-cell"><Icon name="location" size={16} /> {item.location_ids.length.toLocaleString()}개 로케이션</span></td>
+                      <td><strong className="quantity">{item.total_stock_qty.toLocaleString()}</strong><span className="unit"> EA</span></td>
+                      <td><span className={`status-pill ${item.total_stock_qty <= 10 ? "warning" : "success"}`}>{item.total_stock_qty <= 10 ? "재고 부족" : "정상"}</span></td>
                     </tr>
                   ))}
                 </tbody>
